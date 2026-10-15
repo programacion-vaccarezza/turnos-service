@@ -36,10 +36,11 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
 
     @Override
     public Optional<PatientInfo> findByLogin(String login) {
+        LOG.info("consultando a catalogo-service los datos del usuario {}", login);
         try {
             return requestUser(login);
         } catch (WebClientResponseException.Unauthorized | WebClientResponseException.Forbidden e) {
-            LOG.debug("catalogo rechazó el token de servicio con {}, se reintenta con uno nuevo", e.getStatusCode());
+            LOG.warn("catalogo-service rechazó el token de servicio con {}, se renueva y se reintenta una vez", e.getStatusCode());
             catalogTokenService.invalidate();
             return retryRequestUser(login);
         }
@@ -49,6 +50,7 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
         try {
             return requestUser(login);
         } catch (WebClientResponseException.Unauthorized | WebClientResponseException.Forbidden e) {
+            LOG.error("catalogo-service rechazó también el token renovado con {}", e.getStatusCode());
             throw new CatalogAuthenticationException("catalogo rechazó el token de servicio renovado con " + e.getStatusCode());
         }
     }
@@ -60,7 +62,10 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
                 .headers(h -> h.setBearerAuth(catalogTokenService.getToken()))
                 .retrieve()
                 .bodyToMono(CatalogUserResponse.class)
-                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.empty())
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> {
+                    LOG.warn("el usuario {} no existe en catalogo-service", login);
+                    return Mono.empty();
+                })
                 .block();
         return Optional.ofNullable(catalogUserMapper.toDomain(response));
     }
