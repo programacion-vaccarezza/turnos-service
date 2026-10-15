@@ -12,11 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-/**
- * Obtiene y guarda en memoria el JWT técnico que catalogo-service emite para turnos-service.
- * Quien llama a catalogo debe invocar {@link #invalidate()} cuando catalogo rechaza el token
- * (401 o 403) y reintentar una sola vez.
- */
+
 @Service
 public class CatalogTokenService {
 
@@ -51,12 +47,16 @@ public class CatalogTokenService {
                 .uri(SERVICE_TOKEN_PATH)
                 .bodyValue(new ServiceTokenRequest(cfg.clientId(), cfg.clientSecret()))
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, resp -> Mono.error(
-                        new CatalogAuthenticationException("catalogo rechazó las credenciales de servicio con " + resp.statusCode())))
+                .onStatus(HttpStatusCode::is4xxClientError, resp -> {
+                    LOG.error("catalogo-service rechazó las credenciales de servicio con {}", resp.statusCode());
+                    return Mono.error(new CatalogAuthenticationException(
+                            "catalogo rechazó las credenciales de servicio con " + resp.statusCode()));
+                })
                 .bodyToMono(ServiceTokenResponse.class)
                 .block();
 
         if (response == null || response.token() == null) {
+            LOG.error("catalogo-service no devolvió un token de servicio");
             throw new CatalogAuthenticationException("catalogo no devolvió un token de servicio");
         }
         LOG.info("token de servicio obtenido de catalogo-service");
