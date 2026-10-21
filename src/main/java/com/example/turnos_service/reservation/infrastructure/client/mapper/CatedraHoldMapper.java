@@ -1,6 +1,9 @@
 package com.example.turnos_service.reservation.infrastructure.client.mapper;
 
 import com.example.turnos_service.reservation.domain.model.Hold;
+import com.example.turnos_service.reservation.domain.model.HoldConfirmation;
+import com.example.turnos_service.reservation.infrastructure.client.dto.ConfirmHoldRequest;
+import com.example.turnos_service.reservation.infrastructure.client.dto.ConfirmHoldResponse;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CreateHoldRequest;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CreateHoldResponse;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,20 @@ public class CatedraHoldMapper {
         }
         return Hold.builder()
                 .holdId(response.holdId())
+                .reservationProcessId(response.reservationProcessId())
+                .expiresAt(response.expiresAt())
+                .build();
+    }
+
+    public ConfirmHoldRequest toConfirmRequest(String externalPatientId, String patientFirstName, String patientLastName) {
+        return new ConfirmHoldRequest(externalPatientId, patientFirstName, patientLastName);
+    }
+
+    public HoldConfirmation toDomain(ConfirmHoldResponse response) {
+        if (response == null) {
+            return null;
+        }
+        return HoldConfirmation.builder()
                 .reservationProcessId(response.reservationProcessId())
                 .expiresAt(response.expiresAt())
                 .build();
