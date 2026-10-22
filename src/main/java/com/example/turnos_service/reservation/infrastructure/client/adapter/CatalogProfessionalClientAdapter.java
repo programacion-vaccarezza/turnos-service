@@ -1,5 +1,6 @@
 package com.example.turnos_service.reservation.infrastructure.client.adapter;
 
+import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.domain.model.ProfessionalInfo;
 import com.example.turnos_service.reservation.domain.ports.out.CatalogProfessionalPort;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatalogProfessionalResponse;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +38,14 @@ public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort
 
     @Override
     public Optional<ProfessionalInfo> findById(Long professionalId) {
+        try {
+            return findByIdWithRetry(professionalId);
+        } catch (CatalogAuthenticationException | WebClientRequestException | WebClientResponseException e) {
+            throw new CatalogUnavailableException("no se pudo consultar catalogo-service", e);
+        }
+    }
+
+    private Optional<ProfessionalInfo> findByIdWithRetry(Long professionalId) {
         LOG.info("consultando a catalogo-service el profesional {}", professionalId);
         try {
             return requestProfessional(professionalId);

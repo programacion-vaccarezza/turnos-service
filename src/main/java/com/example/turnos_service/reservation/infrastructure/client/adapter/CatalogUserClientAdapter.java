@@ -1,5 +1,6 @@
 package com.example.turnos_service.reservation.infrastructure.client.adapter;
 
+import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.domain.model.PatientInfo;
 import com.example.turnos_service.reservation.domain.ports.out.CatalogUserPort;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatalogUserResponse;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +38,14 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
 
     @Override
     public Optional<PatientInfo> findByLogin(String login) {
+        try {
+            return findByLoginWithRetry(login);
+        } catch (CatalogAuthenticationException | WebClientRequestException | WebClientResponseException e) {
+            throw new CatalogUnavailableException("no se pudo consultar catalogo-service", e);
+        }
+    }
+
+    private Optional<PatientInfo> findByLoginWithRetry(String login) {
         LOG.info("consultando a catalogo-service los datos del usuario {}", login);
         try {
             return requestUser(login);
