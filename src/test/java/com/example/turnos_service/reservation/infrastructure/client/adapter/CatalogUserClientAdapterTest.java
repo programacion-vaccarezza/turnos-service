@@ -1,5 +1,6 @@
 package com.example.turnos_service.reservation.infrastructure.client.adapter;
 
+import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.domain.model.PatientInfo;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatalogUserResponse;
 import com.example.turnos_service.reservation.infrastructure.client.mapper.CatalogUserMapper;
@@ -13,10 +14,14 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.net.ConnectException;
+import java.net.URI;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -119,9 +124,31 @@ class CatalogUserClientAdapterTest {
                 .thenReturn(Mono.error(errorDeCatalogo(403)));
 
         assertThatThrownBy(() -> adapter.findByLogin("juan.perez"))
-                .isInstanceOf(CatalogAuthenticationException.class);
+                .isInstanceOf(CatalogUnavailableException.class)
+                .hasCauseInstanceOf(CatalogAuthenticationException.class);
         verify(tokenService, times(1)).invalidate();
         verify(responseSpec, times(2)).bodyToMono(CatalogUserResponse.class);
+    }
+
+    @Test
+    void debeLanzarCatalogUnavailable_cuandoCatalogoRespondeErrorDelServidor() {
+        when(responseSpec.bodyToMono(CatalogUserResponse.class)).thenReturn(Mono.error(errorDeCatalogo(500)));
+
+        assertThatThrownBy(() -> adapter.findByLogin("juan.perez"))
+                .isInstanceOf(CatalogUnavailableException.class);
+        verify(tokenService, never()).invalidate();
+    }
+
+    @Test
+    void debeLanzarCatalogUnavailable_cuandoCatalogoNoResponde() {
+        WebClientRequestException sinConexion = new WebClientRequestException(
+                new ConnectException("Connection refused"), HttpMethod.GET, URI.create("http://localhost:8080"), HttpHeaders.EMPTY);
+        when(responseSpec.bodyToMono(CatalogUserResponse.class)).thenReturn(Mono.error(sinConexion));
+
+        assertThatThrownBy(() -> adapter.findByLogin("juan.perez"))
+                .isInstanceOf(CatalogUnavailableException.class)
+                .hasCauseInstanceOf(WebClientRequestException.class);
+        verify(tokenService, never()).invalidate();
     }
 
     @Test
