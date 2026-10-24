@@ -1,0 +1,9 @@
+package com.example.turnos_service.reservation.domain.ports.out;
+
+import com.example.turnos_service.reservation.domain.model.ProfessionalInfo;
+
+import java.util.Optional;
+
+public interface CatalogProfessionalPort {
+    Optional<ProfessionalInfo> findById(Long professionalId);
+}
