@@ -3,6 +3,7 @@ package com.example.turnos_service.reservation.application.service;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.InitiateReservationUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.SubmitPhoneUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ public class ReservationService {
 
     private final InitiateReservationUseCase initiateReservationUseCase;
     private final HandleAdditionalInformationRequestedUseCase handleAdditionalInformationRequestedUseCase;
+    private final SubmitPhoneUseCase submitPhoneUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -23,5 +25,9 @@ public class ReservationService {
 
     public void handleAdditionalInformationRequested(String reservationProcessId, String requestEventId, Instant expiresAt) {
         handleAdditionalInformationRequestedUseCase.handleAdditionalInformationRequested(reservationProcessId, requestEventId, expiresAt);
+    }
+
+    public ReservationProcess submitPhone(String ownerLogin, Long processId, String phoneNumber) {
+        return submitPhoneUseCase.submitPhone(ownerLogin, processId, phoneNumber);
     }
 }
