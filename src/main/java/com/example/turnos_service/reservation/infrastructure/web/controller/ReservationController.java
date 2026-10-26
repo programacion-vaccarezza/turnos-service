@@ -2,6 +2,7 @@ package com.example.turnos_service.reservation.infrastructure.web.controller;
 
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
+import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
@@ -38,6 +39,7 @@ public class ReservationController {
     private static final String PATIENT_NOT_FOUND = "PATIENT_NOT_FOUND";
     private static final String PROFESSIONAL_DISABLED = "PROFESSIONAL_DISABLED";
     private static final String INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION";
+    private static final String CONCURRENT_UPDATE = "CONCURRENT_UPDATE";
     private static final String CATALOG_UNAVAILABLE = "CATALOG_UNAVAILABLE";
     private static final String CATEDRA_UNAVAILABLE = "CATEDRA_UNAVAILABLE";
     private static final String CATEDRA_REJECTED = "CATEDRA_REJECTED";
@@ -58,7 +60,7 @@ public class ReservationController {
             @ApiResponse(responseCode = "400", description = "Datos inválidos. code: INVALID_SLOT, PROFESSIONAL_DISABLED"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
             @ApiResponse(responseCode = "404", description = "code: PROFESSIONAL_NOT_FOUND, PATIENT_NOT_FOUND"),
-            @ApiResponse(responseCode = "409", description = "code: SLOT_ALREADY_HELD, SLOT_ALREADY_RESERVED, HOLD_EXPIRED, INVALID_STATE_TRANSITION u otro código de rechazo de la cátedra"),
+            @ApiResponse(responseCode = "409", description = "code: SLOT_ALREADY_HELD, SLOT_ALREADY_RESERVED, HOLD_EXPIRED, INVALID_STATE_TRANSITION, CONCURRENT_UPDATE u otro código de rechazo de la cátedra"),
             @ApiResponse(responseCode = "503", description = "code: CATALOG_UNAVAILABLE, CATEDRA_UNAVAILABLE")
     })
     @PostMapping
@@ -80,6 +82,8 @@ public class ReservationController {
             return error(STATUS_BY_CATEDRA_CODE.getOrDefault(code, HttpStatus.CONFLICT), code);
         } catch (InvalidStateTransitionException e) {
             return error(HttpStatus.CONFLICT, INVALID_STATE_TRANSITION);
+        } catch (ConcurrentReservationUpdateException e) {
+            return error(HttpStatus.CONFLICT, CONCURRENT_UPDATE);
         } catch (CatalogUnavailableException e) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, CATALOG_UNAVAILABLE);
         } catch (CatedraUnavailableException e) {

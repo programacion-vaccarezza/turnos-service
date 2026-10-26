@@ -1,11 +1,13 @@
 package com.example.turnos_service.reservation.infrastructure.persistence.adapter;
 
+import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.ports.out.ReservationProcessRepository;
 import com.example.turnos_service.reservation.infrastructure.persistence.entity.ReservationProcessEntity;
 import com.example.turnos_service.reservation.infrastructure.persistence.mapper.ReservationProcessMapper;
 import com.example.turnos_service.reservation.infrastructure.persistence.repository.JpaReservationProcessRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -20,7 +22,11 @@ public class JpaReservationProcessRepositoryAdapter implements ReservationProces
     @Override
     public ReservationProcess save(ReservationProcess reservationProcess) {
         ReservationProcessEntity entity = reservationProcessMapper.toEntity(reservationProcess);
-        return reservationProcessMapper.toDomainModel(jpaReservationProcessRepository.save(entity));
+        try {
+            return reservationProcessMapper.toDomainModel(jpaReservationProcessRepository.save(entity));
+        } catch (OptimisticLockingFailureException e) {
+            throw new ConcurrentReservationUpdateException(reservationProcess.getId(), e);
+        }
     }
 
     @Override
