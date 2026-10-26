@@ -1,7 +1,11 @@
 package com.example.turnos_service.reservation.application.service;
 
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
+import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRejectedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentConfirmedUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessExpiredUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessInvalidUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.InitiateReservationUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.SubmitPhoneUseCase;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,10 @@ public class ReservationService {
     private final InitiateReservationUseCase initiateReservationUseCase;
     private final HandleAdditionalInformationRequestedUseCase handleAdditionalInformationRequestedUseCase;
     private final SubmitPhoneUseCase submitPhoneUseCase;
+    private final HandleAppointmentConfirmedUseCase handleAppointmentConfirmedUseCase;
+    private final HandleAdditionalInformationRejectedUseCase handleAdditionalInformationRejectedUseCase;
+    private final HandleAppointmentProcessExpiredUseCase handleAppointmentProcessExpiredUseCase;
+    private final HandleAppointmentProcessInvalidUseCase handleAppointmentProcessInvalidUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -29,5 +37,21 @@ public class ReservationService {
 
     public ReservationProcess submitPhone(String ownerLogin, Long processId, String phoneNumber) {
         return submitPhoneUseCase.submitPhone(ownerLogin, processId, phoneNumber);
+    }
+
+    public void handleAppointmentConfirmed(String reservationProcessId, Long reservationId) {
+        handleAppointmentConfirmedUseCase.handleAppointmentConfirmed(reservationProcessId, reservationId);
+    }
+
+    public void handleAdditionalInformationRejected(String reservationProcessId, String reason, Instant expiresAt) {
+        handleAdditionalInformationRejectedUseCase.handleAdditionalInformationRejected(reservationProcessId, reason, expiresAt);
+    }
+
+    public void handleAppointmentProcessExpired(String reservationProcessId, String reason) {
+        handleAppointmentProcessExpiredUseCase.handleAppointmentProcessExpired(reservationProcessId, reason);
+    }
+
+    public void handleAppointmentProcessInvalid(String reservationProcessId, String reason) {
+        handleAppointmentProcessInvalidUseCase.handleAppointmentProcessInvalid(reservationProcessId, reason);
     }
 }

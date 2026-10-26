@@ -62,6 +62,7 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
 
         ReservationStatus previous = process.getStatus();
         process.setStatus(ReservationStatus.PHONE_SUBMITTED);
+        process.setFailureReason(null);
         try {
             ReservationProcess saved = reservationProcessRepository.save(process);
             LOG.info("proceso de reserva {}: {} -> PHONE_SUBMITTED", processId, previous);
