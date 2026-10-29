@@ -11,6 +11,7 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentC
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessExpiredUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessInvalidUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.InitiateReservationUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.ReconcileOpenReservationsUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.SubmitPhoneUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class ReservationService {
     private final GetMyReservationsUseCase getMyReservationsUseCase;
     private final CancelReservationUseCase cancelReservationUseCase;
     private final HandleAppointmentCancelledUseCase handleAppointmentCancelledUseCase;
+    private final ReconcileOpenReservationsUseCase reconcileOpenReservationsUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -73,5 +75,9 @@ public class ReservationService {
 
     public void handleAppointmentCancelled(String reservationProcessId) {
         handleAppointmentCancelledUseCase.handleAppointmentCancelled(reservationProcessId);
+    }
+
+    public void reconcileOpenReservations() {
+        reconcileOpenReservationsUseCase.reconcileOpenReservations();
     }
 }
