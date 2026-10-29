@@ -1,6 +1,7 @@
 package com.example.turnos_service.reservation.application.usecases;
 
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
+import com.example.turnos_service.reservation.application.service.ReservationExpirationService;
 import com.example.turnos_service.reservation.domain.model.CatedraAppointment;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.UserReservation;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * Devuelve las reservas del usuario autenticado. La cátedra lista las de toda la cuenta técnica (anexo §11),
  * así que cada reserva se cruza con los procesos locales del usuario y solo se incluyen las suyas.
  * Si la cátedra no está disponible, se responde con los procesos locales y su estado local.
+ * Antes de responder se vencen los procesos locales que ya pasaron su expiresAt.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,10 +32,13 @@ public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
 
     private final ReservationProcessRepository reservationProcessRepository;
     private final CatedraAppointmentPort catedraAppointmentPort;
+    private final ReservationExpirationService reservationExpirationService;
 
     @Override
     public List<UserReservation> getMyReservations(String ownerLogin) {
-        List<ReservationProcess> processes = reservationProcessRepository.findByOwnerLogin(ownerLogin);
+        List<ReservationProcess> processes = reservationProcessRepository.findByOwnerLogin(ownerLogin).stream()
+                .map(reservationExpirationService::expireIfOverdue)
+                .toList();
         try {
             List<CatedraAppointment> appointments = catedraAppointmentPort.findByExternalPatientId(ownerLogin);
             return fromCatedra(appointments, processes);
