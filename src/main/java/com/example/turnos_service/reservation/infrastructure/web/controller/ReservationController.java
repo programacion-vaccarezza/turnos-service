@@ -1,6 +1,7 @@
 package com.example.turnos_service.reservation.infrastructure.web.controller;
 
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
+import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
@@ -14,6 +15,7 @@ import com.example.turnos_service.reservation.application.exception.ReservationN
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
 import com.example.turnos_service.reservation.application.service.ReservationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
+import com.example.turnos_service.reservation.infrastructure.web.dto.CancelReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.SubmitPhoneRequest;
@@ -149,6 +151,37 @@ public class ReservationController {
                 .map(reservationDtoMapper::toResponse)
                 .toList();
         return ResponseEntity.ok(reservations);
+    }
+
+    @Operation(summary = "Cancelar una reserva propia confirmada",
+            description = "El body con el motivo es opcional. Cancelar una reserva ya CANCELLED devuelve su estado actual.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reserva cancelada. status CANCELLED"),
+            @ApiResponse(responseCode = "400", description = "Motivo de más de 500 caracteres"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+            @ApiResponse(responseCode = "404", description = "code: RESERVATION_NOT_FOUND (no existe o no es del usuario)"),
+            @ApiResponse(responseCode = "409", description = "code: INVALID_STATE_TRANSITION (no está CONFIRMED), CONCURRENT_UPDATE o código de rechazo de la cátedra"),
+            @ApiResponse(responseCode = "503", description = "code: CATEDRA_UNAVAILABLE; el proceso no cambia de estado")
+    })
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long id,
+                                               @Valid @RequestBody(required = false) CancelReservationRequest request,
+                                               Authentication authentication) {
+        String reason = request != null ? request.getReason() : null;
+        try {
+            ReservationProcess process = reservationService.cancelReservation(authentication.getName(), id, reason);
+            return ResponseEntity.ok(reservationDtoMapper.toResponse(process));
+        } catch (ReservationNotFoundException e) {
+            return error(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND);
+        } catch (InvalidStateTransitionException e) {
+            return error(HttpStatus.CONFLICT, INVALID_STATE_TRANSITION);
+        } catch (CatedraRejectedException e) {
+            return error(HttpStatus.CONFLICT, e.getCode() != null ? e.getCode() : CATEDRA_REJECTED);
+        } catch (ConcurrentReservationUpdateException e) {
+            return error(HttpStatus.CONFLICT, CONCURRENT_UPDATE);
+        } catch (CatedraUnavailableException e) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, CATEDRA_UNAVAILABLE);
+        }
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String code) {

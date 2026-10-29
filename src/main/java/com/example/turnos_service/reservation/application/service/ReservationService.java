@@ -2,6 +2,7 @@ package com.example.turnos_service.reservation.application.service;
 
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.domain.ports.in.CancelReservationUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.GetMyReservationsUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRejectedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
@@ -30,6 +31,7 @@ public class ReservationService {
     private final HandleAppointmentProcessExpiredUseCase handleAppointmentProcessExpiredUseCase;
     private final HandleAppointmentProcessInvalidUseCase handleAppointmentProcessInvalidUseCase;
     private final GetMyReservationsUseCase getMyReservationsUseCase;
+    private final CancelReservationUseCase cancelReservationUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -61,5 +63,9 @@ public class ReservationService {
 
     public List<UserReservation> getMyReservations(String ownerLogin) {
         return getMyReservationsUseCase.getMyReservations(ownerLogin);
+    }
+
+    public ReservationProcess cancelReservation(String ownerLogin, Long processId, String reason) {
+        return cancelReservationUseCase.cancelReservation(ownerLogin, processId, reason);
     }
 }

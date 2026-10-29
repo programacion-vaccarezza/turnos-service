@@ -1,8 +1,11 @@
 package com.example.turnos_service.reservation.infrastructure.client.adapter;
 
+import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.domain.model.CatedraAppointment;
 import com.example.turnos_service.reservation.domain.ports.out.CatedraAppointmentPort;
+import com.example.turnos_service.reservation.infrastructure.client.dto.CancelAppointmentRequest;
+import com.example.turnos_service.reservation.infrastructure.client.dto.CancelAppointmentResponse;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatedraAppointmentResponse;
 import com.example.turnos_service.reservation.infrastructure.client.mapper.CatedraAppointmentMapper;
 import com.example.turnos_service.shared.infrastructure.client.catedra.CatedraErrorHandler;
@@ -20,14 +23,15 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Lista las reservas de la cuenta técnica filtradas por paciente (anexo §11), recorriendo todas las páginas.
- * Cualquier error de la cátedra se informa como {@link CatedraUnavailableException}: listar no tiene rechazos de negocio.
+ * Reservas de la cuenta técnica en la cátedra: listado por paciente (anexo §11), recorriendo todas las páginas,
+ * y cancelación (anexo §12).
  */
 @Component
 public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
 
     private static final Logger LOG = LoggerFactory.getLogger(CatedraAppointmentClientAdapter.class);
     private static final String APPOINTMENTS_PATH = "/api/appointments";
+    private static final String CANCEL_PATH = "/api/appointments/{reservationProcessId}/cancel";
     private static final int PAGE_SIZE = 100;
     private static final int MAX_PAGES = 50;
 
@@ -61,6 +65,39 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         return appointments;
     }
 
+    /**
+     * Cancela la reserva. 4xx → {@link CatedraRejectedException} con su code;
+     * 5xx, sin conexión o timeout → {@link CatedraUnavailableException}.
+     */
+    @Override
+    public void cancel(String reservationProcessId, String reason) {
+        LOG.info("cancelando en la cátedra la reserva del proceso {}", reservationProcessId);
+        CancelAppointmentResponse response;
+        try {
+            response = catedraWebClient
+                    .post()
+                    .uri(CANCEL_PATH, reservationProcessId)
+                    .bodyValue(new CancelAppointmentRequest(reason))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, catedraErrorHandler::toException)
+                    .bodyToMono(CancelAppointmentResponse.class)
+                    .block();
+        } catch (CatedraApiException e) {
+            if (e.getStatus() >= 500) {
+                LOG.error("la cátedra no pudo cancelar la reserva por un error {}", e.getStatus());
+                throw new CatedraUnavailableException("la cátedra respondió " + e.getStatus() + " al cancelar la reserva", e);
+            }
+            throw new CatedraRejectedException(e.getStatus(), e.getCode());
+        } catch (WebClientRequestException e) {
+            LOG.error("no se pudo contactar a la cátedra para cancelar la reserva: {}", e.getMessage());
+            throw new CatedraUnavailableException("no se pudo contactar a la cátedra para cancelar la reserva", e);
+        }
+        LOG.info("la cátedra canceló la reserva {} del proceso {} el {}",
+                response != null ? response.reservationId() : null, reservationProcessId,
+                response != null ? response.cancelledAt() : null);
+    }
+
+    /** Listar no tiene rechazos de negocio: cualquier error se informa como {@link CatedraUnavailableException}. */
     private CatedraAppointmentResponse[] fetchPage(String externalPatientId, int page) {
         try {
             return catedraWebClient
