@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -39,5 +40,12 @@ public class JpaReservationProcessRepositoryAdapter implements ReservationProces
     public Optional<ReservationProcess> findByReservationProcessId(String reservationProcessId) {
         return jpaReservationProcessRepository.findByReservationProcessId(reservationProcessId)
                 .map(reservationProcessMapper::toDomainModel);
+    }
+
+    @Override
+    public List<ReservationProcess> findByOwnerLogin(String ownerLogin) {
+        return jpaReservationProcessRepository.findByOwnerLoginOrderByAppointmentDateDescStartTimeDesc(ownerLogin).stream()
+                .map(reservationProcessMapper::toDomainModel)
+                .toList();
     }
 }

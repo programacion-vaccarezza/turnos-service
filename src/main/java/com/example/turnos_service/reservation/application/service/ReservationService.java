@@ -1,6 +1,8 @@
 package com.example.turnos_service.reservation.application.service;
 
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
+import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.domain.ports.in.GetMyReservationsUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRejectedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentConfirmedUseCase;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class ReservationService {
     private final HandleAdditionalInformationRejectedUseCase handleAdditionalInformationRejectedUseCase;
     private final HandleAppointmentProcessExpiredUseCase handleAppointmentProcessExpiredUseCase;
     private final HandleAppointmentProcessInvalidUseCase handleAppointmentProcessInvalidUseCase;
+    private final GetMyReservationsUseCase getMyReservationsUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -53,5 +57,9 @@ public class ReservationService {
 
     public void handleAppointmentProcessInvalid(String reservationProcessId, String reason) {
         handleAppointmentProcessInvalidUseCase.handleAppointmentProcessInvalid(reservationProcessId, reason);
+    }
+
+    public List<UserReservation> getMyReservations(String ownerLogin) {
+        return getMyReservationsUseCase.getMyReservations(ownerLogin);
     }
 }

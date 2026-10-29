@@ -4,11 +4,14 @@ import com.example.turnos_service.reservation.infrastructure.persistence.entity.
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface JpaReservationProcessRepository extends JpaRepository<ReservationProcessEntity, Long> {
 
     Optional<ReservationProcessEntity> findByReservationProcessId(String reservationProcessId);
+
+    List<ReservationProcessEntity> findByOwnerLoginOrderByAppointmentDateDescStartTimeDesc(String ownerLogin);
 
 }

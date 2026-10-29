@@ -17,6 +17,7 @@ import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.SubmitPhoneRequest;
+import com.example.turnos_service.reservation.infrastructure.web.dto.UserReservationResponse;
 import com.example.turnos_service.reservation.infrastructure.web.mapper.ReservationDtoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,12 +28,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "Reservas", description = "Proceso de reserva de turnos del usuario autenticado")
@@ -131,6 +134,21 @@ public class ReservationController {
         } catch (PhoneSubmissionFailedException e) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, PHONE_SUBMISSION_FAILED);
         }
+    }
+
+    @Operation(summary = "Listar las reservas del usuario autenticado",
+            description = "Con la cátedra disponible, status es el de la cátedra (PHONE_PENDING, CONFIRMED, CANCELLED, FAILED) "
+                    + "y source CATEDRA. Si la cátedra no responde, se devuelven los procesos locales con su estado local y source LOCAL.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservas del usuario, nunca las de otro"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    @GetMapping
+    public ResponseEntity<List<UserReservationResponse>> getMyReservations(Authentication authentication) {
+        List<UserReservationResponse> reservations = reservationService.getMyReservations(authentication.getName()).stream()
+                .map(reservationDtoMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(reservations);
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String code) {
