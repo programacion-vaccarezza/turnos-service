@@ -10,11 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * Proceso de reserva iniciado por un usuario final.
- * {@code ownerLogin} es el dueño del proceso (sale del JWT validado) y se envía
- * a la cátedra como {@code externalPatientId}.
- */
+
 @Getter
 @Setter
 @Builder

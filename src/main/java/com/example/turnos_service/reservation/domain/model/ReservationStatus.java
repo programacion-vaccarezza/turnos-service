@@ -5,11 +5,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Estados del proceso de reserva y transiciones permitidas entre ellos.
- * Un estado final no admite ninguna transición: los eventos tardíos o duplicados
- * nunca pueden reabrir ni retroceder un proceso terminado.
- */
+
 public enum ReservationStatus {
 
     INITIATED,
