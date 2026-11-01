@@ -13,6 +13,7 @@ import com.example.turnos_service.shared.infrastructure.client.catedra.exception
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -83,7 +84,7 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
 
     /**
      * Traduce los errores de la llamada a la cátedra:
-     * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión o timeout → {@link CatedraUnavailableException}.
+     * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión, timeout o respuesta inválida → {@link CatedraUnavailableException}.
      */
     private <T> T callCatedra(String operation, Supplier<T> call) {
         try {
@@ -97,6 +98,9 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
         } catch (WebClientRequestException e) {
             LOG.error("no se pudo contactar a la cátedra para {}: {}", operation, e.getMessage());
             throw new CatedraUnavailableException("no se pudo contactar a la cátedra para " + operation, e);
+        } catch (DecodingException e) {
+            LOG.error("la cátedra devolvió una respuesta inválida al {}: {}", operation, e.getMessage());
+            throw new CatedraUnavailableException("la cátedra devolvió una respuesta inválida al " + operation, e);
         }
     }
 }

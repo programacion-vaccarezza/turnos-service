@@ -11,6 +11,7 @@ import com.example.turnos_service.shared.infrastructure.client.catedra.exception
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,7 +22,7 @@ import java.util.List;
 
 /**
  * Consulta las ocupaciones de un profesional en una fecha (anexo §8).
- * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión o timeout → {@link CatedraUnavailableException}.
+ * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión, timeout o respuesta inválida → {@link CatedraUnavailableException}.
  */
 @Component
 public class CatedraOccupancyClientAdapter implements CatedraOccupancyPort {
@@ -67,6 +68,9 @@ public class CatedraOccupancyClientAdapter implements CatedraOccupancyPort {
         } catch (WebClientRequestException e) {
             LOG.error("no se pudo contactar a la cátedra para consultar las ocupaciones: {}", e.getMessage());
             throw new CatedraUnavailableException("no se pudo contactar a la cátedra para consultar las ocupaciones", e);
+        } catch (DecodingException e) {
+            LOG.error("la cátedra devolvió una respuesta inválida al consultar las ocupaciones: {}", e.getMessage());
+            throw new CatedraUnavailableException("la cátedra devolvió una respuesta inválida al consultar las ocupaciones", e);
         }
     }
 }
