@@ -157,6 +157,23 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
+    @Operation(summary = "Consultar el estado local de una reserva propia",
+            description = "La app lo consulta durante la reserva, porque el teléfono y el resultado llegan por Kafka al backend.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado local del proceso"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+            @ApiResponse(responseCode = "404", description = "code: RESERVATION_NOT_FOUND (no existe o no es del usuario)")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getReservation(@PathVariable Long id, Authentication authentication) {
+        try {
+            ReservationProcess process = reservationService.getReservation(authentication.getName(), id);
+            return ResponseEntity.ok(reservationDtoMapper.toResponse(process));
+        } catch (ReservationNotFoundException e) {
+            return error(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND);
+        }
+    }
+
     @Operation(summary = "Cancelar una reserva propia confirmada",
             description = "El body con el motivo es opcional. Cancelar una reserva ya CANCELLED devuelve su estado actual.")
     @ApiResponses({

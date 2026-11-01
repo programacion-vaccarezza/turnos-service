@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.domain.model.UserReservation;
 import com.example.turnos_service.reservation.domain.ports.in.CancelReservationUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.GetAvailabilityUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.GetMyReservationsUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.GetReservationUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRejectedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentCancelledUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
@@ -39,6 +40,7 @@ public class ReservationService {
     private final HandleAppointmentCancelledUseCase handleAppointmentCancelledUseCase;
     private final ReconcileOpenReservationsUseCase reconcileOpenReservationsUseCase;
     private final GetAvailabilityUseCase getAvailabilityUseCase;
+    private final GetReservationUseCase getReservationUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -86,5 +88,9 @@ public class ReservationService {
 
     public List<AvailableSlot> getAvailability(Long professionalId, LocalDate date) {
         return getAvailabilityUseCase.getAvailability(professionalId, date);
+    }
+
+    public ReservationProcess getReservation(String ownerLogin, Long processId) {
+        return getReservationUseCase.getReservation(ownerLogin, processId);
     }
 }
