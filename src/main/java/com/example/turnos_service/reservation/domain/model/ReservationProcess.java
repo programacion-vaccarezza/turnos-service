@@ -44,6 +44,14 @@ public class ReservationProcess {
     private static final Set<ReservationStatus> LOCALLY_EXPIRABLE = EnumSet.of(
             ReservationStatus.HOLD_CREATED, ReservationStatus.WAITING_FOR_PHONE, ReservationStatus.PHONE_REJECTED);
 
+    /** Estados vencidos cuyo resultado es desconocido: solo la cátedra puede decir cómo terminaron. */
+    private static final Set<ReservationStatus> UNKNOWN_OUTCOME = EnumSet.of(
+            ReservationStatus.CONFIRMING, ReservationStatus.PHONE_SUBMITTED);
+
+    public boolean needsReconciliation(Instant now) {
+        return expiresAt != null && now.isAfter(expiresAt) && UNKNOWN_OUTCOME.contains(status);
+    }
+
     public boolean isLocallyExpired(Instant now) {
         return expiresAt != null && now.isAfter(expiresAt) && LOCALLY_EXPIRABLE.contains(status)
                 && status.canTransitionTo(ReservationStatus.EXPIRED);
