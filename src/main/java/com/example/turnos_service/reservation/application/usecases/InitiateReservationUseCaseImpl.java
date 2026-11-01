@@ -4,6 +4,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraRejec
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalNotFoundException;
@@ -25,10 +26,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * Inicia una reserva: valida el profesional y el usuario en catalogo-service, guarda el proceso local,
+ * Inicia una reserva: rechaza los horarios que ya pasaron, valida el profesional y el usuario en catalogo-service, guarda el proceso local,
  * crea el hold en la cátedra y lo confirma, avanzando la máquina de estados según cada resultado.
  * Cada transición se valida antes de llamar a la cátedra.
  */
@@ -48,6 +50,9 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
 
     @Override
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
+        if (!LocalDateTime.of(date, startTime).isAfter(LocalDateTime.now())) {
+            throw new PastSlotException(date, startTime);
+        }
         ProfessionalInfo professional = catalogProfessionalPort.findById(professionalId)
                 .orElseThrow(() -> new ProfessionalNotFoundException(professionalId));
         if (!professional.isEnabled()) {

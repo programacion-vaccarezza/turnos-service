@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraUnava
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
 import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
@@ -50,6 +51,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationController {
 
+    private static final String INVALID_SLOT = "INVALID_SLOT";
     private static final String PROFESSIONAL_NOT_FOUND = "PROFESSIONAL_NOT_FOUND";
     private static final String PATIENT_NOT_FOUND = "PATIENT_NOT_FOUND";
     private static final String PROFESSIONAL_DISABLED = "PROFESSIONAL_DISABLED";
@@ -90,6 +92,8 @@ public class ReservationController {
             ReservationProcess process = reservationService.initiateReservation(
                     ownerLogin, request.getProfessionalId(), request.getDate(), request.getStartTime());
             return new ResponseEntity<>(reservationDtoMapper.toResponse(process), HttpStatus.CREATED);
+        } catch (PastSlotException e) {
+            return error(HttpStatus.BAD_REQUEST, INVALID_SLOT);
         } catch (ProfessionalNotFoundException e) {
             return error(HttpStatus.NOT_FOUND, PROFESSIONAL_NOT_FOUND);
         } catch (PatientNotFoundException e) {
