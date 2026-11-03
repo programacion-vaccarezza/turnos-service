@@ -27,7 +27,7 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
 
     private static final Logger LOG = LoggerFactory.getLogger(ReconcileOpenReservationsUseCaseImpl.class);
     private static final int MAX_ATTEMPTS = 3;
-    private static final long RETRY_DELAY_MILLIS = 5_000;
+    private static final long RETRY_DELAY_MILLIS = 5000;
 
     private static final Set<ReservationStatus> RECONCILABLE = EnumSet.of(
             ReservationStatus.HOLD_CREATED, ReservationStatus.CONFIRMING, ReservationStatus.WAITING_FOR_PHONE,
