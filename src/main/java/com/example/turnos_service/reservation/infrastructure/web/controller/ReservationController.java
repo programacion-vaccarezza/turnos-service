@@ -65,7 +65,6 @@ public class ReservationController {
     private static final String PHONE_NOT_REQUESTED = "PHONE_NOT_REQUESTED";
     private static final String PHONE_SUBMISSION_FAILED = "PHONE_SUBMISSION_FAILED";
 
-    /** Código HTTP para cada código de rechazo de la cátedra (anexo §13.1); el resto responde 409. */
     private static final Map<String, HttpStatus> STATUS_BY_CATEDRA_CODE = Map.of(
             "INVALID_SLOT", HttpStatus.BAD_REQUEST,
             "PROFESSIONAL_DISABLED", HttpStatus.BAD_REQUEST,
@@ -234,7 +233,6 @@ public class ReservationController {
         } catch (CatalogUnavailableException e) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, CATALOG_UNAVAILABLE);
         } catch (CatedraUnavailableException | CatedraRejectedException e) {
-            // El usuario no puede corregir un rechazo de la cátedra a esta consulta: es un problema de la integración.
             return error(HttpStatus.SERVICE_UNAVAILABLE, CATEDRA_UNAVAILABLE);
         }
     }

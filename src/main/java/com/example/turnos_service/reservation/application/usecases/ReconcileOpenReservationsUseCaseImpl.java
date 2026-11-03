@@ -21,11 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Recupera los procesos que quedaron abiertos (enunciado §8, anexo §18.4): consulta a la cátedra las reservas
- * de sus dueños y lleva cada proceso local al estado informado con {@link ReservationReconciler}.
- * Si la cátedra no responde, reintenta una cantidad limitada de veces y después se rinde sin tocar nada.
- */
 @Component
 @RequiredArgsConstructor
 public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReservationsUseCase {
@@ -34,7 +29,6 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
     private static final int MAX_ATTEMPTS = 3;
     private static final long RETRY_DELAY_MILLIS = 5_000;
 
-    /** Procesos que todavía pueden cambiar: los no finales y CONFIRMED, que puede haberse cancelado. */
     private static final Set<ReservationStatus> RECONCILABLE = EnumSet.of(
             ReservationStatus.HOLD_CREATED, ReservationStatus.CONFIRMING, ReservationStatus.WAITING_FOR_PHONE,
             ReservationStatus.PHONE_SUBMITTED, ReservationStatus.PHONE_REJECTED, ReservationStatus.CONFIRMED);
@@ -62,7 +56,6 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
         LOG.info("reconciliación terminada");
     }
 
-    /** Reservas de la cátedra de todos los dueños de procesos abiertos, por reservationProcessId. Vacío si se agotan los intentos. */
     private Optional<Map<String, CatedraAppointment>> fetchWithRetries(List<ReservationProcess> openProcesses) {
         Set<String> owners = openProcesses.stream().map(ReservationProcess::getOwnerLogin).collect(Collectors.toSet());
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {

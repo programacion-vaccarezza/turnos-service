@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/** Turno no disponible según la cátedra (anexo §8): una reserva confirmada o un hold activo. */
 @Getter
 @Setter
 @Builder

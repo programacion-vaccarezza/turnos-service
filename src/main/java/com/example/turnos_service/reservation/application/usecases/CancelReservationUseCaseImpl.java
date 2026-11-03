@@ -13,10 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-/**
- * El usuario cancela una reserva propia confirmada (enunciado §14, anexo §12).
- * Dueño y transición se validan antes de llamar a la cátedra; una reserva ya cancelada se devuelve tal cual.
- */
 @Component
 @RequiredArgsConstructor
 public class CancelReservationUseCaseImpl implements CancelReservationUseCase {
@@ -48,7 +44,6 @@ public class CancelReservationUseCaseImpl implements CancelReservationUseCase {
             LOG.info("proceso de reserva {}: CONFIRMED -> CANCELLED", processId);
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
-            // AppointmentCancelled llegó por Kafka antes de guardar: se devuelve el estado ya actualizado.
             return reservationProcessRepository.findById(processId).orElseThrow(() -> e);
         }
     }

@@ -18,12 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Publica AdditionalInformationSubmitted en el topic de teléfono de la cátedra.
- * La clave del mensaje es el reservationProcessId, para que los eventos del mismo proceso
- * conserven el orden (anexo §15.1, Tema 13). Espera la confirmación del broker antes de
- * devolver, así el proceso solo pasa a PHONE_SUBMITTED si el evento realmente se publicó.
- */
 @Component
 @RequiredArgsConstructor
 public class PhoneSubmissionKafkaPublisher implements PhoneSubmissionPublisher {

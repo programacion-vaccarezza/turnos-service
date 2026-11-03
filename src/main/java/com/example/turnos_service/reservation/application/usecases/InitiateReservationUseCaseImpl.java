@@ -29,11 +29,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-/**
- * Inicia una reserva: rechaza los horarios que ya pasaron, valida el profesional y el usuario en catalogo-service, guarda el proceso local,
- * crea el hold en la cátedra y lo confirma, avanzando la máquina de estados según cada resultado.
- * Cada transición se valida antes de llamar a la cátedra.
- */
 @Component
 @RequiredArgsConstructor
 public class InitiateReservationUseCaseImpl implements InitiateReservationUseCase {
@@ -87,7 +82,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
             ReservationProcess failed = changeStatus(process, ReservationStatus.FAILED, e.getCode());
             throw new ReservationRejectedException(failed.getId(), failed.getStatus(), e.getCode());
         } catch (CatedraUnavailableException e) {
-            // Si el hold llegó a crearse, la cátedra lo vence sola: el proceso local no puede continuar.
             changeStatus(process, ReservationStatus.FAILED, CATEDRA_UNAVAILABLE);
             throw e;
         }
@@ -111,7 +105,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         } catch (CatedraRejectedException e) {
             return handleConfirmRejection(process, e);
         } catch (CatedraUnavailableException e) {
-            // Un timeout no prueba que la confirmación falló (anexo §18.4): queda en CONFIRMING y converge después.
             LOG.warn("sin respuesta de la cátedra al confirmar el proceso {}, queda en CONFIRMING", process.getId());
             return process;
         }
@@ -126,10 +119,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         throw new ReservationRejectedException(rejected.getId(), rejected.getStatus(), e.getCode());
     }
 
-    /**
-     * AdditionalInformationRequested puede llegar por Kafka antes que la respuesta del confirm (enunciado §7)
-     * y ya haber pasado el proceso a WAITING_FOR_PHONE: en ese caso se devuelve el estado guardado.
-     */
     private ReservationProcess moveToWaitingForPhone(ReservationProcess process) {
         try {
             return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);

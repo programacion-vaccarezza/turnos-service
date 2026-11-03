@@ -19,7 +19,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.util.Arrays;
 import java.util.List;
 
-/** Consulta los horarios semanales vigentes del profesional. Catalogo incluye los deshabilitados: se filtran acá. */
 @Component
 public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
 

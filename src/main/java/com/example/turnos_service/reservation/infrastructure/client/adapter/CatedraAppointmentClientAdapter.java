@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Reservas de la cuenta técnica en la cátedra: listado por paciente (anexo §11), recorriendo todas las páginas,
- * y cancelación (anexo §12).
- */
 @Component
 public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
 
@@ -66,10 +62,6 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         return appointments;
     }
 
-    /**
-     * Cancela la reserva. 4xx → {@link CatedraRejectedException} con su code;
-     * 5xx, sin conexión, timeout o respuesta inválida → {@link CatedraUnavailableException}.
-     */
     @Override
     public void cancel(String reservationProcessId, String reason) {
         LOG.info("cancelando en la cátedra la reserva del proceso {}", reservationProcessId);
@@ -101,7 +93,6 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
                 response != null ? response.cancelledAt() : null);
     }
 
-    /** Listar no tiene rechazos de negocio: cualquier error se informa como {@link CatedraUnavailableException}. */
     private CatedraAppointmentResponse[] fetchPage(String externalPatientId, int page) {
         try {
             return catedraWebClient

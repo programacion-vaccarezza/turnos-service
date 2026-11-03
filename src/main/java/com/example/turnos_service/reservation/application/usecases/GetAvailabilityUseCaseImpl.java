@@ -22,11 +22,6 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Calcula los turnos disponibles de un profesional en una fecha (enunciado §7): genera los turnos del día con sus
- * horarios vigentes y descarta los que ya empezaron y los ocupados. Sin ocupaciones no se responde disponibilidad:
- * si la cátedra no está disponible, el error se propaga.
- */
 @Component
 @RequiredArgsConstructor
 public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
@@ -55,7 +50,6 @@ public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
         Set<LocalTime> occupied = catedraOccupancyPort.findByProfessionalAndDate(professionalId, date).stream()
                 .map(Occupancy::getStartTime)
                 .collect(Collectors.toSet());
-        // TreeMap: ordena por hora y, si dos horarios se superponen, deja un solo turno por hora de inicio.
         TreeMap<LocalTime, AvailableSlot> available = slots.stream()
                 .filter(slot -> !occupied.contains(slot.getStartTime()))
                 .collect(Collectors.toMap(AvailableSlot::getStartTime, Function.identity(), (first, second) -> first, TreeMap::new));

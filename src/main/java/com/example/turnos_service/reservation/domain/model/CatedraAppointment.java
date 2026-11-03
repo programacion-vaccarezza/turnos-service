@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/** Reserva tal como la informa la cátedra en GET /api/appointments (anexo §11). */
 @Getter
 @Setter
 @Builder

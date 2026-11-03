@@ -82,10 +82,6 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
         return confirmation;
     }
 
-    /**
-     * Traduce los errores de la llamada a la cátedra:
-     * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión, timeout o respuesta inválida → {@link CatedraUnavailableException}.
-     */
     private <T> T callCatedra(String operation, Supplier<T> call) {
         try {
             return call.get();

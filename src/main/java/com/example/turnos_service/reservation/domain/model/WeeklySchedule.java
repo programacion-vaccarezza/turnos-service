@@ -24,7 +24,6 @@ public class WeeklySchedule {
     private LocalTime endTime;
     private int slotDurationMinutes;
 
-    /** Turnos completos de este horario en {@code date}; vacío si la fecha cae otro día de la semana. */
     public List<AvailableSlot> slotsOn(LocalDate date) {
         List<AvailableSlot> slots = new ArrayList<>();
         if (date.getDayOfWeek() != dayOfWeek || slotDurationMinutes <= 0) {
@@ -32,7 +31,6 @@ public class WeeklySchedule {
         }
         LocalTime start = startTime;
         LocalTime end = start.plusMinutes(slotDurationMinutes);
-        // end.isAfter(start) corta el recorrido si el turno cruzaría la medianoche.
         while (end.isAfter(start) && !end.isAfter(endTime)) {
             slots.add(new AvailableSlot(date, start, end));
             start = end;

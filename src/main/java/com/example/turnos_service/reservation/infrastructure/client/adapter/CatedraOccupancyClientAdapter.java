@@ -20,10 +20,6 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Consulta las ocupaciones de un profesional en una fecha (anexo §8).
- * 4xx → {@link CatedraRejectedException} con su code; 5xx, sin conexión, timeout o respuesta inválida → {@link CatedraUnavailableException}.
- */
 @Component
 public class CatedraOccupancyClientAdapter implements CatedraOccupancyPort {
 

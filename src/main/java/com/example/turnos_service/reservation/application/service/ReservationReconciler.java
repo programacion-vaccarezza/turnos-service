@@ -17,10 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Lleva un proceso local al estado que informa la cátedra (anexo §18.4), avanzando solo por transiciones válidas.
- * Nunca reabre un estado final. Devuelve el proceso tal como quedó.
- */
 @Component
 @RequiredArgsConstructor
 public class ReservationReconciler {
@@ -29,20 +25,17 @@ public class ReservationReconciler {
     private static final String PROCESS_EXPIRED = "PROCESS_EXPIRED";
     private static final String CATEDRA_FAILED = "CATEDRA_FAILED";
 
-    /** Estado local que corresponde a cada estado de reserva de la cátedra (anexo §11). */
     private static final Map<String, ReservationStatus> LOCAL_STATUS_BY_CATEDRA_STATUS = Map.of(
             "PHONE_PENDING", ReservationStatus.WAITING_FOR_PHONE,
             "CONFIRMED", ReservationStatus.CONFIRMED,
             "CANCELLED", ReservationStatus.CANCELLED,
             "FAILED", ReservationStatus.EXPIRED);
 
-    /** Mientras la cátedra espera el teléfono, cualquiera de estos estados locales es coherente con PHONE_PENDING. */
     private static final Set<ReservationStatus> PHONE_STAGE = EnumSet.of(
             ReservationStatus.WAITING_FOR_PHONE, ReservationStatus.PHONE_SUBMITTED, ReservationStatus.PHONE_REJECTED);
 
     private final ReservationProcessRepository reservationProcessRepository;
 
-    /** @param appointment reserva de la cátedra para este proceso, o null si la cátedra no la lista */
     public ReservationProcess reconcile(ReservationProcess process, CatedraAppointment appointment) {
         if (appointment == null) {
             return reconcileNotListed(process);
@@ -62,7 +55,6 @@ public class ReservationReconciler {
         return moveTo(process, target, target == ReservationStatus.EXPIRED ? CATEDRA_FAILED : null);
     }
 
-    /** La cátedra no tiene reserva para el proceso: el hold nunca se confirmó. Si ya venció, se cierra. */
     private ReservationProcess reconcileNotListed(ReservationProcess process) {
         if (process.getExpiresAt() != null && Instant.now().isAfter(process.getExpiresAt())) {
             return moveTo(process, ReservationStatus.EXPIRED, PROCESS_EXPIRED);

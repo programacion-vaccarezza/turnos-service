@@ -10,10 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-/**
- * Garantiza que cada evento de Kafka se procese una sola vez: si su eventId ya fue procesado se ignora,
- * y si no, se aplica su efecto y se registra el eventId en la misma transacción (CLAUDE.md §3).
- */
 @Service
 @RequiredArgsConstructor
 public class EventIdempotencyService {

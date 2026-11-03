@@ -16,11 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/**
- * Devuelve el estado local de un proceso propio (enunciado §7): el teléfono y el resultado llegan por Kafka
- * al backend y la app lo consulta acá. Antes de responder se vence el proceso si ya pasó su expiresAt y,
- * si su resultado es desconocido, se reconcilia con la cátedra (enunciado §8). Con la cátedra caída responde el estado local.
- */
 @Component
 @RequiredArgsConstructor
 public class GetReservationUseCaseImpl implements GetReservationUseCase {

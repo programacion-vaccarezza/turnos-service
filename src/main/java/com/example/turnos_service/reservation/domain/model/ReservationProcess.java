@@ -37,14 +37,9 @@ public class ReservationProcess {
     private Instant updatedAt;
     private Long version;
 
-    /**
-     * Estados en los que la cátedra espera algo de turnos-service, así que al pasar expiresAt el proceso está vencido.
-     * CONFIRMING y PHONE_SUBMITTED no están: el resultado de la cátedra es desconocido y converge por evento o reconciliación.
-     */
     private static final Set<ReservationStatus> LOCALLY_EXPIRABLE = EnumSet.of(
             ReservationStatus.HOLD_CREATED, ReservationStatus.WAITING_FOR_PHONE, ReservationStatus.PHONE_REJECTED);
 
-    /** Estados vencidos cuyo resultado es desconocido: solo la cátedra puede decir cómo terminaron. */
     private static final Set<ReservationStatus> UNKNOWN_OUTCOME = EnumSet.of(
             ReservationStatus.CONFIRMING, ReservationStatus.PHONE_SUBMITTED);
 

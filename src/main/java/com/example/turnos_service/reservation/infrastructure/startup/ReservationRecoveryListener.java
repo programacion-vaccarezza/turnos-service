@@ -8,10 +8,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Al terminar de arrancar, reconcilia con la cátedra los procesos que quedaron abiertos.
- * Un error acá no puede frenar el servicio: una excepción que sale de este evento hace que Spring cierre la aplicación.
- */
 @Component
 @RequiredArgsConstructor
 public class ReservationRecoveryListener {
