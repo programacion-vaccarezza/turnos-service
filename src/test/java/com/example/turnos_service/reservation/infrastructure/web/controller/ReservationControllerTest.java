@@ -1,6 +1,7 @@
 package com.example.turnos_service.reservation.infrastructure.web.controller;
 
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
+import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
@@ -15,10 +16,13 @@ import com.example.turnos_service.reservation.application.exception.ReservationR
 import com.example.turnos_service.reservation.application.service.ReservationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
+import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.infrastructure.web.dto.CancelReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ReservationResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.SubmitPhoneRequest;
+import com.example.turnos_service.reservation.infrastructure.web.dto.UserReservationResponse;
 import com.example.turnos_service.reservation.infrastructure.web.mapper.ReservationDtoMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +39,7 @@ import org.springframework.security.core.Authentication;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.example.turnos_service.reservation.domain.model.ReservationStatus.*;
@@ -151,6 +156,77 @@ class ReservationControllerTest {
         when(reservationService.submitPhone(LOGIN, 2L, "+5492615551234")).thenThrow(error);
 
         ResponseEntity<?> response = controller.submitPhone(2L, new SubmitPhoneRequest("+5492615551234"), authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(status);
+        assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);
+    }
+
+    @Test
+    void debeResponder200ConLasReservasDelUsuarioAutenticado_cuandoLasLista() {
+        UserReservation reserva = UserReservation.builder()
+                .id(2L).reservationId(1502L).status("CONFIRMED").source(UserReservation.SOURCE_CATEDRA).build();
+        when(reservationService.getMyReservations(LOGIN)).thenReturn(List.of(reserva));
+
+        ResponseEntity<List<UserReservationResponse>> response = controller.getMyReservations(authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).singleElement()
+                .extracting(UserReservationResponse::getId, UserReservationResponse::getReservationId,
+                        UserReservationResponse::getStatus, UserReservationResponse::getSource)
+                .containsExactly(2L, 1502L, "CONFIRMED", UserReservation.SOURCE_CATEDRA);
+        verify(reservationService).getMyReservations(LOGIN);
+    }
+
+    @Test
+    void debeResponder200ConListaVacia_cuandoElUsuarioNoTieneReservas() {
+        when(reservationService.getMyReservations(LOGIN)).thenReturn(List.of());
+
+        ResponseEntity<List<UserReservationResponse>> response = controller.getMyReservations(authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+    }
+
+    @Test
+    void debeResponder200ConElProcesoCancelado_cuandoLaReservaSeCancela() {
+        when(reservationService.cancelReservation(LOGIN, 2L, "Cambio de horario"))
+                .thenReturn(ReservationProcess.builder().id(2L).status(CANCELLED).build());
+
+        ResponseEntity<?> response = controller.cancelReservation(2L, new CancelReservationRequest("Cambio de horario"), authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(((ReservationResponse) response.getBody()).getStatus()).isEqualTo(CANCELLED);
+        verify(reservationService).cancelReservation(LOGIN, 2L, "Cambio de horario");
+    }
+
+    @Test
+    void debeCancelarSinMotivo_cuandoElRequestNoTieneBody() {
+        when(reservationService.cancelReservation(LOGIN, 2L, null))
+                .thenReturn(ReservationProcess.builder().id(2L).status(CANCELLED).build());
+
+        ResponseEntity<?> response = controller.cancelReservation(2L, null, authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(reservationService).cancelReservation(LOGIN, 2L, null);
+    }
+
+    static Stream<Arguments> erroresDeLaCancelacion() {
+        return Stream.of(
+                Arguments.of(new ReservationNotFoundException(2L), HttpStatus.NOT_FOUND, "RESERVATION_NOT_FOUND"),
+                Arguments.of(new InvalidStateTransitionException(WAITING_FOR_PHONE, CANCELLED), HttpStatus.CONFLICT, "INVALID_STATE_TRANSITION"),
+                Arguments.of(new CatedraRejectedException(409, "RESERVATION_NOT_CANCELLABLE"), HttpStatus.CONFLICT, "RESERVATION_NOT_CANCELLABLE"),
+                Arguments.of(new CatedraRejectedException(409, null), HttpStatus.CONFLICT, "CATEDRA_REJECTED"),
+                Arguments.of(new ConcurrentReservationUpdateException(2L, null), HttpStatus.CONFLICT, "CONCURRENT_UPDATE"),
+                Arguments.of(new CatedraUnavailableException("cátedra caída", null), HttpStatus.SERVICE_UNAVAILABLE, "CATEDRA_UNAVAILABLE")
+        );
+    }
+
+    @ParameterizedTest(name = "{2} -> {1}")
+    @MethodSource("erroresDeLaCancelacion")
+    void debeResponderElCodigoHttpYElCode_cuandoLaCancelacionFalla(RuntimeException error, HttpStatus status, String code) {
+        when(reservationService.cancelReservation(LOGIN, 2L, null)).thenThrow(error);
+
+        ResponseEntity<?> response = controller.cancelReservation(2L, null, authentication);
 
         assertThat(response.getStatusCode()).isEqualTo(status);
         assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);
