@@ -72,6 +72,16 @@ class AppointmentEventHandlersTest {
         verify(reservationService).handleAppointmentProcessInvalid(PROCESO, "HOLD_MISMATCH");
     }
 
+    @Test
+    void debePasarElProceso_cuandoLlegaAppointmentCancelled() {
+        AppointmentCancelledHandler handler = new AppointmentCancelledHandler(reservationService);
+
+        handler.handle(evento("cancellation-event-1", "AppointmentCancelled", 8251L, "Cambio de horario"));
+
+        assertThat(handler.eventType()).isEqualTo("AppointmentCancelled");
+        verify(reservationService).handleAppointmentCancelled(PROCESO);
+    }
+
     private static AppointmentKafkaEvent evento(String eventId, String eventType, Long reservationId, String reason) {
         return new AppointmentKafkaEvent(eventId, eventType, "proyecto-franco-vaccarezza", PROCESO, "hold-6c0c2f41",
                 null, reservationId, 15L, "2026-09-14", "09:30", null, "phoneNumber", reason, null, VENCE,
