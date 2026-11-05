@@ -1,0 +1,5 @@
+name: sistema-turnos
+
+include:
+  - ./compose.service.yaml
+  - ../catalogo-service/compose.service.yaml
