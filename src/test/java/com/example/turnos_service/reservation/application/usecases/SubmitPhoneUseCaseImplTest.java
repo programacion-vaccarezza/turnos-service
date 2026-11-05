@@ -7,17 +7,18 @@ import com.example.turnos_service.reservation.application.exception.PhoneNotRequ
 import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
 import com.example.turnos_service.reservation.application.exception.ReservationNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
+import com.example.turnos_service.reservation.application.service.ReservationExpirationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.domain.ports.out.PhoneSubmissionPublisher;
 import com.example.turnos_service.reservation.domain.ports.out.ReservationProcessRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -56,8 +57,13 @@ class SubmitPhoneUseCaseImplTest {
     @Captor
     ArgumentCaptor<String> eventIdCaptor;
 
-    @InjectMocks
     SubmitPhoneUseCaseImpl useCase;
+
+    @BeforeEach
+    void setUp() {
+        useCase = new SubmitPhoneUseCaseImpl(reservationProcessRepository, phoneSubmissionPublisher,
+                new ReservationExpirationService(reservationProcessRepository));
+    }
 
     @Test
     void debePublicarElTelefonoYPasarAPhoneSubmitted_cuandoLaCatedraLoPidio() {
@@ -128,6 +134,7 @@ class SubmitPhoneUseCaseImplTest {
     @Test
     void debePasarAExpiredSinPublicar_cuandoYaPasoElVencimiento() {
         when(reservationProcessRepository.findById(ID)).thenReturn(Optional.of(proceso(WAITING_FOR_PHONE, haceUnMinuto())));
+        when(reservationProcessRepository.save(any(ReservationProcess.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatThrownBy(() -> useCase.submitPhone(LOGIN, ID, TELEFONO))
                 .isInstanceOf(ReservationRejectedException.class)
