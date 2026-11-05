@@ -1,6 +1,7 @@
 package com.example.turnos_service.reservation.application.usecases;
 
 import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
+import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
@@ -101,7 +102,7 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
             if (confirmation.getExpiresAt() != null) {
                 process.setExpiresAt(confirmation.getExpiresAt());
             }
-            return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);
+            return moveToWaitingForPhone(process);
         } catch (CatedraRejectedException e) {
             return handleConfirmRejection(process, e);
         } catch (CatedraUnavailableException e) {
@@ -113,11 +114,28 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
 
     private ReservationProcess handleConfirmRejection(ReservationProcess process, CatedraRejectedException e) {
         if (ALREADY_CONFIRMED.equals(e.getCode())) {
-            return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);
+            return moveToWaitingForPhone(process);
         }
         ReservationStatus finalStatus = HOLD_EXPIRED.equals(e.getCode()) ? ReservationStatus.EXPIRED : ReservationStatus.FAILED;
         ReservationProcess rejected = changeStatus(process, finalStatus, e.getCode());
         throw new ReservationRejectedException(rejected.getId(), rejected.getStatus(), e.getCode());
+    }
+
+    /**
+     * AdditionalInformationRequested puede llegar por Kafka antes que la respuesta del confirm (enunciado §7)
+     * y ya haber pasado el proceso a WAITING_FOR_PHONE: en ese caso se devuelve el estado guardado.
+     */
+    private ReservationProcess moveToWaitingForPhone(ReservationProcess process) {
+        try {
+            return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);
+        } catch (ConcurrentReservationUpdateException e) {
+            ReservationProcess current = reservationProcessRepository.findById(process.getId()).orElseThrow(() -> e);
+            if (current.getStatus() == ReservationStatus.WAITING_FOR_PHONE) {
+                LOG.info("proceso de reserva {}: ya estaba en WAITING_FOR_PHONE por el evento de Kafka", process.getId());
+                return current;
+            }
+            throw e;
+        }
     }
 
     private void validateTransition(ReservationProcess process, ReservationStatus next) {

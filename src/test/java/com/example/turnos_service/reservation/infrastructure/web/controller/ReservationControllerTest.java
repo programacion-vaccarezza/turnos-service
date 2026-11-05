@@ -2,10 +2,15 @@ package com.example.turnos_service.reservation.infrastructure.web.controller;
 
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
+import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
+import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
+import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
+import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalNotFoundException;
+import com.example.turnos_service.reservation.application.exception.ReservationNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
 import com.example.turnos_service.reservation.application.service.ReservationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
@@ -13,6 +18,7 @@ import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ReservationResponse;
+import com.example.turnos_service.reservation.infrastructure.web.dto.SubmitPhoneRequest;
 import com.example.turnos_service.reservation.infrastructure.web.mapper.ReservationDtoMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -112,6 +118,41 @@ class ReservationControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(status);
         assertThat(response.getBody()).isInstanceOf(ErrorResponse.class);
+        assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);
+    }
+
+    @Test
+    void debeResponder202ConElProceso_cuandoElTelefonoSeEnvia() {
+        when(reservationService.submitPhone(LOGIN, 2L, "+5492615551234"))
+                .thenReturn(ReservationProcess.builder().id(2L).status(PHONE_SUBMITTED).build());
+
+        ResponseEntity<?> response = controller.submitPhone(2L, new SubmitPhoneRequest("+5492615551234"), authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(((ReservationResponse) response.getBody()).getStatus()).isEqualTo(PHONE_SUBMITTED);
+        verify(reservationService).submitPhone(LOGIN, 2L, "+5492615551234");
+    }
+
+    static Stream<Arguments> erroresDelTelefono() {
+        return Stream.of(
+                Arguments.of(new ReservationNotFoundException(2L), HttpStatus.NOT_FOUND, "RESERVATION_NOT_FOUND"),
+                Arguments.of(new InvalidPhoneNumberException(), HttpStatus.BAD_REQUEST, "INVALID_PHONE_NUMBER"),
+                Arguments.of(new PhoneNotRequestedException(2L), HttpStatus.CONFLICT, "PHONE_NOT_REQUESTED"),
+                Arguments.of(rechazo(EXPIRED, "PROCESS_EXPIRED"), HttpStatus.CONFLICT, "PROCESS_EXPIRED"),
+                Arguments.of(new InvalidStateTransitionException(CONFIRMED, PHONE_SUBMITTED), HttpStatus.CONFLICT, "INVALID_STATE_TRANSITION"),
+                Arguments.of(new ConcurrentReservationUpdateException(2L, null), HttpStatus.CONFLICT, "CONCURRENT_UPDATE"),
+                Arguments.of(new PhoneSubmissionFailedException("kafka caído", null), HttpStatus.SERVICE_UNAVAILABLE, "PHONE_SUBMISSION_FAILED")
+        );
+    }
+
+    @ParameterizedTest(name = "{2} -> {1}")
+    @MethodSource("erroresDelTelefono")
+    void debeResponderElCodigoHttpYElCode_cuandoElEnvioDelTelefonoFalla(RuntimeException error, HttpStatus status, String code) {
+        when(reservationService.submitPhone(LOGIN, 2L, "+5492615551234")).thenThrow(error);
+
+        ResponseEntity<?> response = controller.submitPhone(2L, new SubmitPhoneRequest("+5492615551234"), authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(status);
         assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);
     }
 
