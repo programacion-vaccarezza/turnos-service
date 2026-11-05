@@ -1,7 +1,12 @@
 package com.example.turnos_service.reservation.domain.model;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,5 +46,37 @@ public enum ReservationStatus {
 
     public boolean canTransitionTo(ReservationStatus next) {
         return next != null && TRANSITIONS.get(this).contains(next);
+    }
+
+    /**
+     * Camino más corto de transiciones válidas hasta {@code target}, sin incluir el estado actual.
+     * Vacío si ya está en {@code target} o si no se puede llegar (por ejemplo, desde un estado final).
+     */
+    public List<ReservationStatus> pathTo(ReservationStatus target) {
+        Map<ReservationStatus, ReservationStatus> previous = new EnumMap<>(ReservationStatus.class);
+        Deque<ReservationStatus> pending = new ArrayDeque<>(List.of(this));
+        while (!pending.isEmpty()) {
+            ReservationStatus current = pending.poll();
+            for (ReservationStatus next : TRANSITIONS.get(current)) {
+                if (next == this || previous.containsKey(next)) {
+                    continue;
+                }
+                previous.put(next, current);
+                if (next == target) {
+                    return buildPath(previous, target);
+                }
+                pending.add(next);
+            }
+        }
+        return List.of();
+    }
+
+    private List<ReservationStatus> buildPath(Map<ReservationStatus, ReservationStatus> previous, ReservationStatus target) {
+        List<ReservationStatus> path = new ArrayList<>();
+        for (ReservationStatus step = target; step != this; step = previous.get(step)) {
+            path.add(step);
+        }
+        Collections.reverse(path);
+        return path;
     }
 }

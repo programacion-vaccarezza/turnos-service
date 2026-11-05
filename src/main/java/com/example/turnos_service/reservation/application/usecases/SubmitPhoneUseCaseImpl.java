@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.application.exception.InvalidState
 import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
 import com.example.turnos_service.reservation.application.exception.ReservationNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
+import com.example.turnos_service.reservation.application.service.ReservationExpirationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.domain.ports.in.SubmitPhoneUseCase;
@@ -16,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -31,10 +31,10 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
     private static final Logger LOG = LoggerFactory.getLogger(SubmitPhoneUseCaseImpl.class);
     /** Formato que exige la cátedra después de quitar espacios, guiones, paréntesis y puntos (anexo §15.5). */
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[0-9]{7,15}$");
-    private static final String PROCESS_EXPIRED = "PROCESS_EXPIRED";
 
     private final ReservationProcessRepository reservationProcessRepository;
     private final PhoneSubmissionPublisher phoneSubmissionPublisher;
+    private final ReservationExpirationService reservationExpirationService;
 
     @Override
     public ReservationProcess submitPhone(String ownerLogin, Long processId, String phoneNumber) {
@@ -46,8 +46,11 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
         if (!PHONE_PATTERN.matcher(normalizedPhone).matches()) {
             throw new InvalidPhoneNumberException();
         }
-        if (process.getExpiresAt() != null && Instant.now().isAfter(process.getExpiresAt())) {
-            expire(process);
+        // La copia local no extiende el hold (enunciado §7): si ya venció se cierra sin enviar nada.
+        process = reservationExpirationService.expireIfOverdue(process);
+        if (process.getStatus() == ReservationStatus.EXPIRED) {
+            throw new ReservationRejectedException(process.getId(), ReservationStatus.EXPIRED,
+                    ReservationExpirationService.PROCESS_EXPIRED);
         }
         if (!process.getStatus().canTransitionTo(ReservationStatus.PHONE_SUBMITTED)) {
             throw new InvalidStateTransitionException(process.getStatus(), ReservationStatus.PHONE_SUBMITTED);
@@ -71,18 +74,6 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
             // El resultado de la cátedra llegó por Kafka antes de guardar: se devuelve el estado ya actualizado.
             return reservationProcessRepository.findById(processId).orElseThrow(() -> e);
         }
-    }
-
-    /** La copia local no extiende el hold (enunciado §7): si ya venció se cierra sin enviar nada. */
-    private void expire(ReservationProcess process) {
-        if (process.getStatus().canTransitionTo(ReservationStatus.EXPIRED)) {
-            LOG.info("proceso de reserva {}: {} -> EXPIRED (venció antes de enviar el teléfono)",
-                    process.getId(), process.getStatus());
-            process.setStatus(ReservationStatus.EXPIRED);
-            process.setFailureReason(PROCESS_EXPIRED);
-            reservationProcessRepository.save(process);
-        }
-        throw new ReservationRejectedException(process.getId(), ReservationStatus.EXPIRED, PROCESS_EXPIRED);
     }
 
     private String normalize(String phoneNumber) {
