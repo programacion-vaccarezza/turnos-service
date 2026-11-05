@@ -50,6 +50,6 @@ class ReservationDtoMapperTest {
 
     @Test
     void debeDevolverNull_cuandoElProcesoEsNulo() {
-        assertThat(mapper.toResponse(null)).isNull();
+        assertThat(mapper.toResponse((ReservationProcess) null)).isNull();
     }
 }
