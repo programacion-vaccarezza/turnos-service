@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+// Aplica a un proceso el cambio de estado que trae un evento de Kafka
 @Component
 @RequiredArgsConstructor
 public class ReservationEventStatusUpdater {
@@ -19,6 +20,7 @@ public class ReservationEventStatusUpdater {
 
     private final ReservationProcessRepository reservationProcessRepository;
 
+    // Cambia el estado si la transición es válida; si no, ignora el evento
     public void apply(String reservationProcessId, ReservationStatus next, String eventType,
                       Consumer<ReservationProcess> changes) {
         Optional<ReservationProcess> found = reservationProcessRepository.findByReservationProcessId(reservationProcessId);

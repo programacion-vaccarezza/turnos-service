@@ -45,6 +45,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+// Endpoints de reservas para la app; el usuario siempre sale del JWT
 @Tag(name = "Reservas", description = "Proceso de reserva de turnos del usuario autenticado")
 @RestController
 @RequestMapping("/api/appointments")
@@ -65,6 +66,7 @@ public class ReservationController {
     private static final String PHONE_NOT_REQUESTED = "PHONE_NOT_REQUESTED";
     private static final String PHONE_SUBMISSION_FAILED = "PHONE_SUBMISSION_FAILED";
 
+    // Código HTTP para cada rechazo de la cátedra; el resto responde 409
     private static final Map<String, HttpStatus> STATUS_BY_CATEDRA_CODE = Map.of(
             "INVALID_SLOT", HttpStatus.BAD_REQUEST,
             "PROFESSIONAL_DISABLED", HttpStatus.BAD_REQUEST,
@@ -74,6 +76,7 @@ public class ReservationController {
     private final ReservationService reservationService;
     private final ReservationDtoMapper reservationDtoMapper;
 
+    // Inicia una reserva y traduce cada error a su código HTTP
     @Operation(summary = "Iniciar una reserva: crea el hold en la cátedra y lo confirma, dejando el proceso a la espera del teléfono")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Proceso creado. status WAITING_FOR_PHONE, o CONFIRMING si la cátedra no respondió a tiempo"),
@@ -113,6 +116,7 @@ public class ReservationController {
         }
     }
 
+    // Envía el teléfono pedido por la cátedra
     @Operation(summary = "Enviar el teléfono que pidió la cátedra para una reserva propia")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Teléfono enviado. status PHONE_SUBMITTED; el resultado final llega por Kafka"),
@@ -145,6 +149,7 @@ public class ReservationController {
         }
     }
 
+    // Lista las reservas del usuario
     @Operation(summary = "Listar las reservas del usuario autenticado",
             description = "Con la cátedra disponible, status es el de la cátedra (PHONE_PENDING, CONFIRMED, CANCELLED, FAILED) "
                     + "y source CATEDRA. Si la cátedra no responde, se devuelven los procesos locales con su estado local y source LOCAL.")
@@ -160,6 +165,7 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
+    // Devuelve el estado de una reserva del usuario
     @Operation(summary = "Consultar el estado local de una reserva propia",
             description = "La app lo consulta durante la reserva, porque el teléfono y el resultado llegan por Kafka al backend.")
     @ApiResponses({
@@ -177,6 +183,7 @@ public class ReservationController {
         }
     }
 
+    // Cancela una reserva del usuario
     @Operation(summary = "Cancelar una reserva propia confirmada",
             description = "El body con el motivo es opcional. Cancelar una reserva ya CANCELLED devuelve su estado actual.")
     @ApiResponses({
@@ -208,6 +215,7 @@ public class ReservationController {
         }
     }
 
+    // Devuelve los turnos libres de un profesional en una fecha
     @Operation(summary = "Consultar los turnos disponibles de un profesional en una fecha",
             description = "Combina los horarios vigentes de catalogo-service con las ocupaciones de la cátedra. "
                     + "No incluye turnos que ya empezaron. Lista vacía si no hay turnos disponibles.")
@@ -237,6 +245,7 @@ public class ReservationController {
         }
     }
 
+    // Arma la respuesta de error con su code
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String code) {
         return ResponseEntity.status(status).body(new ErrorResponse(code));
     }

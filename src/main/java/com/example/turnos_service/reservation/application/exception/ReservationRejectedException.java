@@ -3,6 +3,7 @@ package com.example.turnos_service.reservation.application.exception;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import lombok.Getter;
 
+// La reserva fue rechazada, con su estado final y el code del motivo
 @Getter
 public class ReservationRejectedException extends RuntimeException {
 

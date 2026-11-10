@@ -2,6 +2,7 @@ package com.example.turnos_service.reservation.infrastructure.kafka.dto;
 
 import java.time.Instant;
 
+// Evento que publica la cátedra; reúne los campos de todos los tipos de evento
 public record AppointmentKafkaEvent(
         String eventId,
         String eventType,

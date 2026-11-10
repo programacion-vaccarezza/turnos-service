@@ -6,12 +6,14 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentC
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// Registra la cancelación informada por la cátedra
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentCancelledUseCaseImpl implements HandleAppointmentCancelledUseCase {
 
     private final ReservationEventStatusUpdater statusUpdater;
 
+    // Pasa el proceso a CANCELLED
     @Override
     public void handleAppointmentCancelled(String reservationProcessId) {
         statusUpdater.apply(reservationProcessId, ReservationStatus.CANCELLED, "AppointmentCancelled", process -> { });

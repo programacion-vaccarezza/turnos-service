@@ -8,9 +8,11 @@ import com.example.turnos_service.reservation.infrastructure.web.dto.Reservation
 import com.example.turnos_service.reservation.infrastructure.web.dto.UserReservationResponse;
 import org.springframework.stereotype.Component;
 
+// Convierte los modelos de dominio en las respuestas de la API
 @Component
 public class ReservationDtoMapper {
 
+    // Convierte un proceso en ReservationResponse
     public ReservationResponse toResponse(ReservationProcess process) {
         if (process == null) {
             return null;
@@ -26,6 +28,7 @@ public class ReservationDtoMapper {
                 .build();
     }
 
+    // Convierte una reserva del usuario en UserReservationResponse
     public UserReservationResponse toResponse(UserReservation reservation) {
         if (reservation == null) {
             return null;
@@ -47,6 +50,7 @@ public class ReservationDtoMapper {
                 .build();
     }
 
+    // Convierte un turno libre en AvailableSlotResponse
     public AvailableSlotResponse toResponse(AvailableSlot slot) {
         if (slot == null) {
             return null;

@@ -9,12 +9,14 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 
+// Configura el WebClient para llamar a la API de la cátedra
 @Configuration
 @EnableConfigurationProperties(CatedraConfiguration.class)
 public class CatedraWebClientConfiguration {
 
     private static final Duration RESPONSE_TIMEOUT = Duration.ofSeconds(5);
 
+    // Crea el WebClient con la URL de la cátedra
     @Bean
     public WebClient catedraWebClient(CatedraConfiguration cfg) {
         HttpClient httpClient = HttpClient.create().responseTimeout(RESPONSE_TIMEOUT);

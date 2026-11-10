@@ -9,12 +9,14 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 
+// Configura el WebClient para llamar a catalogo-service
 @Configuration
 @EnableConfigurationProperties(CatalogConfiguration.class)
 public class CatalogWebClientConfiguration {
 
     private static final Duration RESPONSE_TIMEOUT = Duration.ofSeconds(5);
 
+    // Crea el WebClient con la URL de catalogo-service
     @Bean
     public WebClient catalogWebClient(CatalogConfiguration cfg) {
         HttpClient httpClient = HttpClient.create().responseTimeout(RESPONSE_TIMEOUT);

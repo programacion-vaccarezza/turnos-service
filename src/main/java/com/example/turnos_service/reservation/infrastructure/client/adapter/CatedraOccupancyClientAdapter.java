@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import java.time.LocalDate;
 import java.util.List;
 
+// Adapter que consulta los turnos ocupados en la cátedra
 @Component
 public class CatedraOccupancyClientAdapter implements CatedraOccupancyPort {
 
@@ -38,6 +39,7 @@ public class CatedraOccupancyClientAdapter implements CatedraOccupancyPort {
         this.catedraOccupancyMapper = catedraOccupancyMapper;
     }
 
+    // Pide las ocupaciones del profesional en la fecha y traduce los errores
     @Override
     public List<Occupancy> findByProfessionalAndDate(Long professionalId, LocalDate date) {
         LOG.info("consultando a la cátedra las ocupaciones del profesional {} el {}", professionalId, date);

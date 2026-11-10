@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+// Adapter que lista y cancela reservas en la cátedra
 @Component
 public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
 
@@ -44,6 +45,7 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         this.catedraAppointmentMapper = catedraAppointmentMapper;
     }
 
+    // Recorre todas las páginas de reservas del paciente, hasta un máximo de 50
     @Override
     public List<CatedraAppointment> findByExternalPatientId(String externalPatientId) {
         LOG.info("consultando a la cátedra las reservas del paciente {}", externalPatientId);
@@ -62,6 +64,7 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         return appointments;
     }
 
+    // Cancela la reserva; un 4xx es un rechazo y un 5xx o la falta de respuesta, cátedra no disponible
     @Override
     public void cancel(String reservationProcessId, String reason) {
         LOG.info("cancelando en la cátedra la reserva del proceso {}", reservationProcessId);
@@ -93,6 +96,7 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
                 response != null ? response.cancelledAt() : null);
     }
 
+    // Pide una página del listado; cualquier error se informa como cátedra no disponible
     private CatedraAppointmentResponse[] fetchPage(String externalPatientId, int page) {
         try {
             return catedraWebClient

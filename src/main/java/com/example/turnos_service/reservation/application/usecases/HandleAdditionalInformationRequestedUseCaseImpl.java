@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Optional;
 
+// Registra el pedido de teléfono que hace la cátedra
 @Component
 @RequiredArgsConstructor
 public class HandleAdditionalInformationRequestedUseCaseImpl implements HandleAdditionalInformationRequestedUseCase {
@@ -20,6 +21,7 @@ public class HandleAdditionalInformationRequestedUseCaseImpl implements HandleAd
 
     private final ReservationProcessRepository reservationProcessRepository;
 
+    // Guarda el pedido y deja el proceso esperando el teléfono
     @Override
     public void handleAdditionalInformationRequested(String reservationProcessId, String requestEventId, Instant expiresAt) {
         Optional<ReservationProcess> found = reservationProcessRepository.findByReservationProcessId(reservationProcessId);
@@ -30,6 +32,7 @@ public class HandleAdditionalInformationRequestedUseCaseImpl implements HandleAd
         ReservationProcess process = found.get();
         ReservationStatus current = process.getStatus();
 
+        // Si el proceso ya esperaba el teléfono, solo se guarda el pedido
         if (current == ReservationStatus.WAITING_FOR_PHONE) {
             saveRequestData(process, requestEventId, expiresAt);
             LOG.info("proceso de reserva {}: pedido de teléfono registrado (ya esperaba el teléfono)", process.getId());
@@ -44,6 +47,7 @@ public class HandleAdditionalInformationRequestedUseCaseImpl implements HandleAd
         LOG.info("proceso de reserva {}: {} -> WAITING_FOR_PHONE (pedido de teléfono)", process.getId(), current);
     }
 
+    // Guarda el eventId del pedido y el nuevo vencimiento
     private void saveRequestData(ReservationProcess process, String requestEventId, Instant expiresAt) {
         process.setRequestEventId(requestEventId);
         if (expiresAt != null) {

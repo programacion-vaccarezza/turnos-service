@@ -2,6 +2,7 @@ package com.example.turnos_service.reservation.infrastructure.kafka.dto;
 
 import java.time.Instant;
 
+// Evento que se publica en Kafka con el teléfono del usuario
 public record AdditionalInformationSubmittedEvent(
         String eventId,
         String eventType,
@@ -16,6 +17,7 @@ public record AdditionalInformationSubmittedEvent(
     public static final String EVENT_TYPE = "AdditionalInformationSubmitted";
     public static final int SCHEMA_VERSION = 1;
 
+    // Dato pedido por la cátedra: el teléfono
     public record Information(String phoneNumber) {
     }
 }

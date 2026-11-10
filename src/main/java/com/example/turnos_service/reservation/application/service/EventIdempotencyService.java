@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+// Garantiza que cada evento de Kafka se procese una sola vez
 @Service
 @RequiredArgsConstructor
 public class EventIdempotencyService {
@@ -18,6 +19,7 @@ public class EventIdempotencyService {
 
     private final ProcessedEventRepository processedEventRepository;
 
+    // Aplica el efecto si el eventId es nuevo y lo registra en la misma transacción
     @Transactional
     public boolean processOnce(String eventId, String eventType, Runnable effect) {
         if (processedEventRepository.existsByEventId(eventId)) {

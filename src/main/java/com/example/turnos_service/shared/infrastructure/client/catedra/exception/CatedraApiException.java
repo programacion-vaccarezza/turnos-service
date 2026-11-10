@@ -2,6 +2,7 @@ package com.example.turnos_service.shared.infrastructure.client.catedra.exceptio
 
 import lombok.Getter;
 
+// Error devuelto por la API de la cátedra, con su status HTTP y su code
 @Getter
 public class CatedraApiException extends RuntimeException {
 

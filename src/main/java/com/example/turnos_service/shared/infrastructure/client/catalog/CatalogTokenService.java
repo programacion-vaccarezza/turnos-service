@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 
+// Obtiene y guarda en memoria el JWT de servicio que turnos usa para llamar a catalogo-service
 @Service
 public class CatalogTokenService {
 
@@ -28,6 +29,7 @@ public class CatalogTokenService {
         this.cfg = cfg;
     }
 
+    // Devuelve el token guardado, o pide uno nuevo si todavía no hay
     public synchronized String getToken() {
         if (token == null) {
             token = requestToken();
@@ -35,11 +37,13 @@ public class CatalogTokenService {
         return token;
     }
 
+    // Descarta el token guardado para que el próximo pedido traiga uno nuevo
     public synchronized void invalidate() {
         LOG.debug("token de servicio invalidado, se va a pedir uno nuevo");
         this.token = null;
     }
 
+    // Pide el token a catalogo-service con las credenciales de la cuenta técnica
     private String requestToken() {
         LOG.debug("pidiendo token de servicio a {}", cfg.url());
         ServiceTokenResponse response = catalogWebClient

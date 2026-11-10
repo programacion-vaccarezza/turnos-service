@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Estado de un proceso de reserva que se devuelve a la app
 @Getter
 @Setter
 @Builder

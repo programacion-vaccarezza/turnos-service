@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+// Respuesta de la cátedra al confirmar un hold
 @Getter
 @Setter
 @Builder

@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// Devuelve las reservas del usuario, combinando los datos locales con los de la cátedra
 @Component
 @RequiredArgsConstructor
 public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
@@ -28,6 +29,7 @@ public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
     private final CatedraAppointmentPort catedraAppointmentPort;
     private final ReservationExpirationService reservationExpirationService;
 
+    // Vence los procesos atrasados y lista las reservas; si la cátedra no responde, usa los datos locales
     @Override
     public List<UserReservation> getMyReservations(String ownerLogin) {
         List<ReservationProcess> processes = reservationProcessRepository.findByOwnerLogin(ownerLogin).stream()
@@ -42,6 +44,7 @@ public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
         }
     }
 
+    // Se queda solo con las reservas de la cátedra que son de procesos del usuario
     private List<UserReservation> fromCatedra(List<CatedraAppointment> appointments, List<ReservationProcess> processes) {
         Map<String, ReservationProcess> ownProcesses = processes.stream()
                 .filter(process -> process.getReservationProcessId() != null)
@@ -52,6 +55,7 @@ public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
                 .toList();
     }
 
+    // Une la reserva de la cátedra con su proceso local
     private UserReservation combine(CatedraAppointment appointment, ReservationProcess process) {
         return UserReservation.builder()
                 .id(process.getId())
@@ -70,6 +74,7 @@ public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {
                 .build();
     }
 
+    // Arma la reserva solo con los datos locales
     private UserReservation fromLocal(ReservationProcess process) {
         return UserReservation.builder()
                 .id(process.getId())

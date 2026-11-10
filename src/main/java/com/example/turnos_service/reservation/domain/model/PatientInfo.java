@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// Nombre y apellido del usuario, obtenidos de catalogo-service
 @Getter
 @Setter
 @Builder

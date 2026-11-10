@@ -2,6 +2,7 @@ package com.example.turnos_service.reservation.application.exception;
 
 import lombok.Getter;
 
+// La cátedra rechazó la operación, con su status HTTP y su code
 @Getter
 public class CatedraRejectedException extends RuntimeException {
 

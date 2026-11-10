@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+// Adapter que guarda y busca procesos de reserva con JPA
 @Component
 @RequiredArgsConstructor
 public class JpaReservationProcessRepositoryAdapter implements ReservationProcessRepository {
@@ -22,6 +23,7 @@ public class JpaReservationProcessRepositoryAdapter implements ReservationProces
     private final JpaReservationProcessRepository jpaReservationProcessRepository;
     private final ReservationProcessMapper reservationProcessMapper;
 
+    // Guarda el proceso; un choque de versiones se informa como actualización concurrente
     @Override
     public ReservationProcess save(ReservationProcess reservationProcess) {
         ReservationProcessEntity entity = reservationProcessMapper.toEntity(reservationProcess);
@@ -32,18 +34,21 @@ public class JpaReservationProcessRepositoryAdapter implements ReservationProces
         }
     }
 
+    // Busca el proceso por su id
     @Override
     public Optional<ReservationProcess> findById(Long id) {
         return jpaReservationProcessRepository.findById(id)
                 .map(reservationProcessMapper::toDomainModel);
     }
 
+    // Busca el proceso por el id de la cátedra
     @Override
     public Optional<ReservationProcess> findByReservationProcessId(String reservationProcessId) {
         return jpaReservationProcessRepository.findByReservationProcessId(reservationProcessId)
                 .map(reservationProcessMapper::toDomainModel);
     }
 
+    // Devuelve los procesos del usuario, del turno más reciente al más viejo
     @Override
     public List<ReservationProcess> findByOwnerLogin(String ownerLogin) {
         return jpaReservationProcessRepository.findByOwnerLoginOrderByAppointmentDateDescStartTimeDesc(ownerLogin).stream()
@@ -51,6 +56,7 @@ public class JpaReservationProcessRepositoryAdapter implements ReservationProces
                 .toList();
     }
 
+    // Devuelve los procesos en los estados indicados
     @Override
     public List<ReservationProcess> findByStatusIn(Collection<ReservationStatus> statuses) {
         return jpaReservationProcessRepository.findByStatusIn(statuses).stream()

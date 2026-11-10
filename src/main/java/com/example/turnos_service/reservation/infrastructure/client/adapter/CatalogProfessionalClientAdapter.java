@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+// Adapter que consulta profesionales en catalogo-service con el JWT de servicio
 @Component
 public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort {
 
@@ -36,6 +37,7 @@ public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort
         this.catalogProfessionalMapper = catalogProfessionalMapper;
     }
 
+    // Consulta el profesional; un error de comunicación se informa como catálogo no disponible
     @Override
     public Optional<ProfessionalInfo> findById(Long professionalId) {
         try {
@@ -45,6 +47,7 @@ public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort
         }
     }
 
+    // Si catalogo rechaza el token, lo renueva y reintenta una vez
     private Optional<ProfessionalInfo> findByIdWithRetry(Long professionalId) {
         LOG.info("consultando a catalogo-service el profesional {}", professionalId);
         try {
@@ -56,6 +59,7 @@ public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort
         }
     }
 
+    // Reintenta con el token renovado
     private Optional<ProfessionalInfo> retryRequestProfessional(Long professionalId) {
         try {
             return requestProfessional(professionalId);
@@ -65,6 +69,7 @@ public class CatalogProfessionalClientAdapter implements CatalogProfessionalPort
         }
     }
 
+    // Hace el pedido; si el profesional no existe devuelve vacío
     private Optional<ProfessionalInfo> requestProfessional(Long professionalId) {
         CatalogProfessionalResponse response = catalogWebClient
                 .get()

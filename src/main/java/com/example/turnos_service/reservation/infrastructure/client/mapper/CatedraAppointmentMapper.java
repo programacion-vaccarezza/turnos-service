@@ -4,9 +4,11 @@ import com.example.turnos_service.reservation.domain.model.CatedraAppointment;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatedraAppointmentResponse;
 import org.springframework.stereotype.Component;
 
+// Convierte las reservas de la cátedra al modelo de dominio
 @Component
 public class CatedraAppointmentMapper {
 
+    // Convierte la respuesta en CatedraAppointment
     public CatedraAppointment toDomain(CatedraAppointmentResponse response) {
         if (response == null) {
             return null;

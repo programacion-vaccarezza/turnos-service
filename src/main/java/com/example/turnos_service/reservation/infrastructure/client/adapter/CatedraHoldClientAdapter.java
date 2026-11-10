@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.function.Supplier;
 
+// Adapter que crea y confirma holds en la cátedra
 @Component
 public class CatedraHoldClientAdapter implements CatedraHoldPort {
 
@@ -42,6 +43,7 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
         this.catedraHoldMapper = catedraHoldMapper;
     }
 
+    // Crea el hold del turno
     @Override
     public Hold createHold(Long professionalId, LocalDate date, LocalTime startTime, String externalPatientId) {
         LOG.info("solicitando hold a la cátedra para el profesional {} el {} a las {}", professionalId, date, startTime);
@@ -62,6 +64,7 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
         return hold;
     }
 
+    // Confirma el hold con los datos del paciente
     @Override
     public HoldConfirmation confirmHold(String holdId, String externalPatientId, String patientFirstName, String patientLastName) {
         LOG.info("confirmando en la cátedra el hold {}", holdId);
@@ -82,6 +85,7 @@ public class CatedraHoldClientAdapter implements CatedraHoldPort {
         return confirmation;
     }
 
+    // Ejecuta el pedido y traduce los errores: un 4xx es un rechazo y el resto, cátedra no disponible
     private <T> T callCatedra(String operation, Supplier<T> call) {
         try {
             return call.get();

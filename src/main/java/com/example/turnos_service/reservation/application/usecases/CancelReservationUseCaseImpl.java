@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+// Cancela en la cátedra una reserva confirmada del usuario
 @Component
 @RequiredArgsConstructor
 public class CancelReservationUseCaseImpl implements CancelReservationUseCase {
@@ -22,12 +23,14 @@ public class CancelReservationUseCaseImpl implements CancelReservationUseCase {
     private final ReservationProcessRepository reservationProcessRepository;
     private final CatedraAppointmentPort catedraAppointmentPort;
 
+    // Valida el dueño y el estado, cancela en la cátedra y guarda CANCELLED
     @Override
     public ReservationProcess cancelReservation(String ownerLogin, Long processId, String reason) {
         ReservationProcess process = reservationProcessRepository.findById(processId)
                 .filter(p -> p.getOwnerLogin().equals(ownerLogin))
                 .orElseThrow(() -> new ReservationNotFoundException(processId));
 
+        // Si ya estaba cancelada se devuelve igual, sin volver a llamar a la cátedra
         if (process.getStatus() == ReservationStatus.CANCELLED) {
             LOG.info("proceso de reserva {}: ya estaba CANCELLED", processId);
             return process;
@@ -44,6 +47,7 @@ public class CancelReservationUseCaseImpl implements CancelReservationUseCase {
             LOG.info("proceso de reserva {}: CONFIRMED -> CANCELLED", processId);
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
+            // La cancelación llegó por Kafka antes de guardar: se devuelve el estado que dejó el evento
             return reservationProcessRepository.findById(processId).orElseThrow(() -> e);
         }
     }

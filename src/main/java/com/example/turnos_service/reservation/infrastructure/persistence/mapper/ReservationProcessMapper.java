@@ -4,9 +4,11 @@ import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.infrastructure.persistence.entity.ReservationProcessEntity;
 import org.springframework.stereotype.Component;
 
+// Convierte procesos de reserva entre el dominio y la entidad JPA
 @Component
 public class ReservationProcessMapper {
 
+    // Convierte el modelo de dominio en entidad
     public ReservationProcessEntity toEntity(ReservationProcess reservationProcess) {
         if (reservationProcess == null) {
             return null;
@@ -32,6 +34,7 @@ public class ReservationProcessMapper {
                 .build();
     }
 
+    // Convierte la entidad en modelo de dominio
     public ReservationProcess toDomainModel(ReservationProcessEntity entity) {
         if (entity == null) {
             return null;

@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+// Evento de Kafka ya procesado
 @Getter
 @Setter
 @Builder

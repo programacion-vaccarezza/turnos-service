@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+// Filtro que lee el JWT de cada pedido y, si es válido, deja autenticado al usuario
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenValidator tokenValidator;
 
+    // Valida el token y guarda el login del usuario para el resto del pedido
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -40,9 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // Si no hay token o no es válido, el pedido sigue sin autenticar y responde 401
         filterChain.doFilter(request, response);
     }
 
+    // Saca el token del header Authorization
     private String resolveToken(HttpServletRequest request) {
         String header = request.getHeader(AUTHORIZATION_HEADER);
         if (header != null && header.startsWith(BEARER_PREFIX)) {

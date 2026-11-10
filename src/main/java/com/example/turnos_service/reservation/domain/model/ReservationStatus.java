@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 
+// Estados del proceso de reserva y las transiciones permitidas entre ellos
 public enum ReservationStatus {
 
     INITIATED,
@@ -27,6 +28,7 @@ public enum ReservationStatus {
 
     private static final Set<ReservationStatus> FINAL_STATES = EnumSet.of(CANCELLED, EXPIRED, INVALID, FAILED);
 
+    // Estados a los que se puede pasar desde cada estado
     private static final Map<ReservationStatus, Set<ReservationStatus>> TRANSITIONS = new EnumMap<>(ReservationStatus.class);
 
     static {
@@ -40,14 +42,17 @@ public enum ReservationStatus {
         FINAL_STATES.forEach(state -> TRANSITIONS.put(state, EnumSet.noneOf(ReservationStatus.class)));
     }
 
+    // Indica si el estado es final
     public boolean isFinal() {
         return FINAL_STATES.contains(this);
     }
 
+    // Indica si se puede pasar al estado indicado
     public boolean canTransitionTo(ReservationStatus next) {
         return next != null && TRANSITIONS.get(this).contains(next);
     }
 
+    // Busca la secuencia de transiciones válidas para llegar al estado indicado; vacía si no hay
     public List<ReservationStatus> pathTo(ReservationStatus target) {
         Map<ReservationStatus, ReservationStatus> previous = new EnumMap<>(ReservationStatus.class);
         Deque<ReservationStatus> pending = new ArrayDeque<>(List.of(this));
@@ -67,6 +72,7 @@ public enum ReservationStatus {
         return List.of();
     }
 
+    // Arma el camino desde el estado actual hasta el destino
     private List<ReservationStatus> buildPath(Map<ReservationStatus, ReservationStatus> previous, ReservationStatus target) {
         List<ReservationStatus> path = new ArrayList<>();
         for (ReservationStatus step = target; step != this; step = previous.get(step)) {

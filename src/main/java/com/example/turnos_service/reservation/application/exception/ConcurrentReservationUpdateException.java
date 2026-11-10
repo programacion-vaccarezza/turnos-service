@@ -1,5 +1,6 @@
 package com.example.turnos_service.reservation.application.exception;
 
+// El proceso de reserva fue modificado al mismo tiempo por otro flujo
 public class ConcurrentReservationUpdateException extends RuntimeException {
 
     public ConcurrentReservationUpdateException(Long processId, Throwable cause) {

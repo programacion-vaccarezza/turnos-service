@@ -8,15 +8,18 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
+// Convierte las respuestas de error de la cátedra en una excepción con su status y su code
 @Component
 public class CatedraErrorHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(CatedraErrorHandler.class);
 
+    // Lee el code del cuerpo del error y arma la excepción
     public Mono<? extends Throwable> toException(ClientResponse response) {
         int status = response.statusCode().value();
         return response.bodyToMono(CatedraProblemResponse.class)
                 .mapNotNull(CatedraProblemResponse::code)
+                // Si el cuerpo no se puede leer, la excepción queda sin code
                 .onErrorResume(e -> Mono.empty())
                 .defaultIfEmpty("")
                 .map(code -> {

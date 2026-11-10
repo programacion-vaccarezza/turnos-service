@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+// Entidad JPA de la tabla processed_event
 @Getter
 @Setter
 @Entity

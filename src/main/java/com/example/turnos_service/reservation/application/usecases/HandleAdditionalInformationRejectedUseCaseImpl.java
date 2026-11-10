@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
+// Registra que la cátedra rechazó el teléfono
 @Component
 @RequiredArgsConstructor
 public class HandleAdditionalInformationRejectedUseCaseImpl implements HandleAdditionalInformationRejectedUseCase {
 
     private final ReservationEventStatusUpdater statusUpdater;
 
+    // Pasa el proceso a PHONE_REJECTED con el motivo y el nuevo vencimiento
     @Override
     public void handleAdditionalInformationRejected(String reservationProcessId, String reason, Instant expiresAt) {
         statusUpdater.apply(reservationProcessId, ReservationStatus.PHONE_REJECTED, "AdditionalInformationRejected", process -> {

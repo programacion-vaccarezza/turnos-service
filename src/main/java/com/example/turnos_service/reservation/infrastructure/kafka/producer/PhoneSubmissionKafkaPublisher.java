@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+// Publica el teléfono en el topic de la cátedra
 @Component
 @RequiredArgsConstructor
 public class PhoneSubmissionKafkaPublisher implements PhoneSubmissionPublisher {
@@ -29,6 +30,7 @@ public class PhoneSubmissionKafkaPublisher implements PhoneSubmissionPublisher {
     private final CatedraKafkaConfiguration kafkaConfiguration;
     private final CatedraConfiguration catedraConfiguration;
 
+    // Publica el evento con el reservationProcessId como clave y espera la confirmación de Kafka
     @Override
     public void publishPhone(ReservationProcess process, String eventId, String phoneNumber) {
         AdditionalInformationSubmittedEvent event = new AdditionalInformationSubmittedEvent(

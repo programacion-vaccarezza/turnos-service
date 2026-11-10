@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Turno ocupado en la cátedra
 @Getter
 @Setter
 @Builder
