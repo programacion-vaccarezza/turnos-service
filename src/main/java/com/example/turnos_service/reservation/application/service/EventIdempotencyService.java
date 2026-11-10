@@ -19,7 +19,7 @@ public class EventIdempotencyService {
 
     private final ProcessedEventRepository processedEventRepository;
 
-    // Aplica el efecto si el eventId es nuevo y lo registra en la misma transacción
+    // Aplica si el eventId es nuevo y lo registra en la misma transacción
     @Transactional
     public boolean processOnce(String eventId, String eventType, Runnable effect) {
         if (processedEventRepository.existsByEventId(eventId)) {
