@@ -43,7 +43,6 @@ class AppointmentActionsConsumerTest {
         when(confirmedHandler.eventType()).thenReturn("AppointmentConfirmed");
         when(expiredHandler.eventType()).thenReturn("AppointmentProcessExpired");
         consumer = new AppointmentActionsConsumer(List.of(confirmedHandler, expiredHandler), eventIdempotencyService);
-        // Simula un evento nuevo: el servicio de idempotencia ejecuta el efecto.
         lenient().when(eventIdempotencyService.processOnce(anyString(), anyString(), any(Runnable.class))).thenAnswer(invocation -> {
             invocation.<Runnable>getArgument(2).run();
             return true;

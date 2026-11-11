@@ -69,7 +69,6 @@ class InitiateReservationUseCaseImplTest {
     @InjectMocks
     InitiateReservationUseCaseImpl useCase;
 
-    /** Estado del proceso en cada guardado, en orden: permite verificar el recorrido por la máquina de estados. */
     private final List<ReservationStatus> estadosGuardados = new ArrayList<>();
 
     @BeforeEach
@@ -83,8 +82,6 @@ class InitiateReservationUseCaseImplTest {
             return process;
         });
     }
-
-    // ---------- camino feliz ----------
 
     @Test
     void debeRecorrerLaMaquinaDeEstadosHastaEsperarElTelefono_cuandoTodoSaleBien() {
@@ -118,8 +115,6 @@ class InitiateReservationUseCaseImplTest {
         verify(catedraHoldPort).createHold(PROFESIONAL, FECHA, HORA, LOGIN);
         verify(catedraHoldPort).confirmHold("hold-1", LOGIN, "Juan", "Lopez");
     }
-
-    // ---------- validaciones previas: no se guarda nada ni se llama a la cátedra ----------
 
     @Test
     void debeRechazarSinTocarLaCatedra_cuandoElProfesionalNoExiste() {
@@ -161,8 +156,6 @@ class InitiateReservationUseCaseImplTest {
         verifyNoInteractions(reservationProcessRepository, catedraHoldPort);
     }
 
-    // ---------- creación del hold ----------
-
     @Test
     void debeFallarElProcesoConElCodigo_cuandoLaCatedraRechazaElHold() {
         datosDeCatalogoValidos();
@@ -188,8 +181,6 @@ class InitiateReservationUseCaseImplTest {
         assertThat(estadosGuardados).containsExactly(INITIATED, FAILED);
         verify(catedraHoldPort, never()).confirmHold(anyString(), anyString(), anyString(), anyString());
     }
-
-    // ---------- confirmación del hold ----------
 
     @Test
     void debeEsperarElTelefono_cuandoLaCatedraIndicaQueElProcesoYaEstabaConfirmado() {
@@ -244,8 +235,6 @@ class InitiateReservationUseCaseImplTest {
         assertThat(resultado.getStatus()).isEqualTo(CONFIRMING);
         assertThat(estadosGuardados).containsExactly(INITIATED, HOLD_CREATED, CONFIRMING);
     }
-
-    // ---------- helpers ----------
 
     @Test
     void debeRechazarSinConsultarANadie_cuandoLaFechaYaPaso() {

@@ -74,8 +74,6 @@ class CatedraHoldClientAdapterTest {
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
     }
 
-    // ---------- crear hold ----------
-
     @Test
     void debeDevolverElHold_cuandoLaCatedraLoCrea() {
         when(responseSpec.bodyToMono(CreateHoldResponse.class))
@@ -135,8 +133,6 @@ class CatedraHoldClientAdapterTest {
         assertThatThrownBy(() -> adapter.createHold(201L, FECHA, HORA, "juan.lopez"))
                 .isInstanceOf(CatedraUnavailableException.class);
     }
-
-    // ---------- confirmar hold ----------
 
     @Test
     void debeDevolverLaConfirmacion_cuandoLaCatedraAceptaElConfirm() {

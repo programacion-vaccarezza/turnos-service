@@ -12,7 +12,6 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
-/** Cada handler declara su eventType (anexo §15) y pasa a la fachada solo los campos de su tipo de evento. */
 @ExtendWith(MockitoExtension.class)
 class AppointmentEventHandlersTest {
 
