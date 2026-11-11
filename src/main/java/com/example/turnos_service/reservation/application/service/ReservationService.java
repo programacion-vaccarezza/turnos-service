@@ -1,12 +1,17 @@
 package com.example.turnos_service.reservation.application.service;
 
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
+import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.domain.ports.in.CancelReservationUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.GetMyReservationsUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRejectedUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentCancelledUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAdditionalInformationRequestedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentConfirmedUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessExpiredUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentProcessInvalidUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.InitiateReservationUseCase;
+import com.example.turnos_service.reservation.domain.ports.in.ReconcileOpenReservationsUseCase;
 import com.example.turnos_service.reservation.domain.ports.in.SubmitPhoneUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,10 @@ public class ReservationService {
     private final HandleAdditionalInformationRejectedUseCase handleAdditionalInformationRejectedUseCase;
     private final HandleAppointmentProcessExpiredUseCase handleAppointmentProcessExpiredUseCase;
     private final HandleAppointmentProcessInvalidUseCase handleAppointmentProcessInvalidUseCase;
+    private final GetMyReservationsUseCase getMyReservationsUseCase;
+    private final CancelReservationUseCase cancelReservationUseCase;
+    private final HandleAppointmentCancelledUseCase handleAppointmentCancelledUseCase;
+    private final ReconcileOpenReservationsUseCase reconcileOpenReservationsUseCase;
 
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         return initiateReservationUseCase.initiateReservation(ownerLogin, professionalId, date, startTime);
@@ -53,5 +63,21 @@ public class ReservationService {
 
     public void handleAppointmentProcessInvalid(String reservationProcessId, String reason) {
         handleAppointmentProcessInvalidUseCase.handleAppointmentProcessInvalid(reservationProcessId, reason);
+    }
+
+    public List<UserReservation> getMyReservations(String ownerLogin) {
+        return getMyReservationsUseCase.getMyReservations(ownerLogin);
+    }
+
+    public ReservationProcess cancelReservation(String ownerLogin, Long processId, String reason) {
+        return cancelReservationUseCase.cancelReservation(ownerLogin, processId, reason);
+    }
+
+    public void handleAppointmentCancelled(String reservationProcessId) {
+        handleAppointmentCancelledUseCase.handleAppointmentCancelled(reservationProcessId);
+    }
+
+    public void reconcileOpenReservations() {
+        reconcileOpenReservationsUseCase.reconcileOpenReservations();
     }
 }
