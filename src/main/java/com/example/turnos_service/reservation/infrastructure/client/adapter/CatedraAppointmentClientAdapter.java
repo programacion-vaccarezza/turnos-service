@@ -13,6 +13,7 @@ import com.example.turnos_service.shared.infrastructure.client.catedra.exception
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,10 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Reservas de la cuenta técnica en la cátedra: listado por paciente (anexo §11), recorriendo todas las páginas,
- * y cancelación (anexo §12).
- */
 @Component
 public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
 
@@ -65,10 +62,6 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         return appointments;
     }
 
-    /**
-     * Cancela la reserva. 4xx → {@link CatedraRejectedException} con su code;
-     * 5xx, sin conexión o timeout → {@link CatedraUnavailableException}.
-     */
     @Override
     public void cancel(String reservationProcessId, String reason) {
         LOG.info("cancelando en la cátedra la reserva del proceso {}", reservationProcessId);
@@ -91,13 +84,15 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         } catch (WebClientRequestException e) {
             LOG.error("no se pudo contactar a la cátedra para cancelar la reserva: {}", e.getMessage());
             throw new CatedraUnavailableException("no se pudo contactar a la cátedra para cancelar la reserva", e);
+        } catch (DecodingException e) {
+            LOG.error("la cátedra devolvió una respuesta inválida al cancelar la reserva: {}", e.getMessage());
+            throw new CatedraUnavailableException("la cátedra devolvió una respuesta inválida al cancelar la reserva", e);
         }
         LOG.info("la cátedra canceló la reserva {} del proceso {} el {}",
                 response != null ? response.reservationId() : null, reservationProcessId,
                 response != null ? response.cancelledAt() : null);
     }
 
-    /** Listar no tiene rechazos de negocio: cualquier error se informa como {@link CatedraUnavailableException}. */
     private CatedraAppointmentResponse[] fetchPage(String externalPatientId, int page) {
         try {
             return catedraWebClient
@@ -117,6 +112,9 @@ public class CatedraAppointmentClientAdapter implements CatedraAppointmentPort {
         } catch (WebClientRequestException e) {
             LOG.error("no se pudo contactar a la cátedra para listar las reservas: {}", e.getMessage());
             throw new CatedraUnavailableException("no se pudo contactar a la cátedra para listar las reservas", e);
+        } catch (DecodingException e) {
+            LOG.error("la cátedra devolvió una respuesta inválida al listar las reservas: {}", e.getMessage());
+            throw new CatedraUnavailableException("la cátedra devolvió una respuesta inválida al listar las reservas", e);
         }
     }
 }

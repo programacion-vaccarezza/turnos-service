@@ -10,10 +10,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * Reserva de un usuario: el proceso local combinado con los datos de la cátedra.
- * Si la cátedra no está disponible, solo tiene los datos locales y {@code source} es LOCAL.
- */
 @Getter
 @Setter
 @Builder

@@ -15,10 +15,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Consume el topic de acciones de la cátedra y despacha cada evento al handler de su eventType.
- * Los tipos desconocidos se ignoran; los eventos ya procesados se ignoran a través de {@link EventIdempotencyService}.
- */
 @Component
 public class AppointmentActionsConsumer {
 

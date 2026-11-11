@@ -6,7 +6,6 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentC
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** La cátedra confirmó la reserva (anexo §15.6): se guarda el reservationId y el proceso pasa a CONFIRMED. */
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentConfirmedUseCaseImpl implements HandleAppointmentConfirmedUseCase {
