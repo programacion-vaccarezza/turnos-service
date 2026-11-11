@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraUnava
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
 import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
@@ -101,6 +102,7 @@ class ReservationControllerTest {
         return Stream.of(
                 Arguments.of(new ProfessionalNotFoundException(201L), HttpStatus.NOT_FOUND, "PROFESSIONAL_NOT_FOUND"),
                 Arguments.of(new PatientNotFoundException(LOGIN), HttpStatus.NOT_FOUND, "PATIENT_NOT_FOUND"),
+                Arguments.of(new PastSlotException(FECHA, HORA), HttpStatus.BAD_REQUEST, "INVALID_SLOT"),
                 Arguments.of(new ProfessionalDisabledException(201L), HttpStatus.BAD_REQUEST, "PROFESSIONAL_DISABLED"),
                 Arguments.of(rechazo(FAILED, "INVALID_SLOT"), HttpStatus.BAD_REQUEST, "INVALID_SLOT"),
                 Arguments.of(rechazo(FAILED, "PROFESSIONAL_DISABLED"), HttpStatus.BAD_REQUEST, "PROFESSIONAL_DISABLED"),

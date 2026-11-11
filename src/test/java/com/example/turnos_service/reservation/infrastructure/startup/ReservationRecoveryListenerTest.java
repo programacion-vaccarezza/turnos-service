@@ -7,6 +7,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,5 +25,12 @@ class ReservationRecoveryListenerTest {
         listener.onApplicationReady();
 
         verify(reservationService).reconcileOpenReservations();
+    }
+
+    @Test
+    void noDebeFrenarElArranque_cuandoLaReconciliacionFallaConUnErrorInesperado() {
+        doThrow(new IllegalStateException("error inesperado")).when(reservationService).reconcileOpenReservations();
+
+        assertThatCode(() -> listener.onApplicationReady()).doesNotThrowAnyException();
     }
 }

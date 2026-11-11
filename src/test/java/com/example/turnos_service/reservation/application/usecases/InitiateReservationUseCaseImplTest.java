@@ -3,6 +3,7 @@ package com.example.turnos_service.reservation.application.usecases;
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalNotFoundException;
@@ -26,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -244,6 +246,24 @@ class InitiateReservationUseCaseImplTest {
     }
 
     // ---------- helpers ----------
+
+    @Test
+    void debeRechazarSinConsultarANadie_cuandoLaFechaYaPaso() {
+        assertThatThrownBy(() -> useCase.initiateReservation(LOGIN, PROFESIONAL, LocalDate.now().minusDays(1), HORA))
+                .isInstanceOf(PastSlotException.class);
+
+        verifyNoInteractions(catalogProfessionalPort, catalogUserPort, reservationProcessRepository, catedraHoldPort);
+    }
+
+    @Test
+    void debeRechazarSinConsultarANadie_cuandoElHorarioDeHoyYaEmpezo() {
+        LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
+
+        assertThatThrownBy(() -> useCase.initiateReservation(LOGIN, PROFESIONAL, haceUnaHora.toLocalDate(), haceUnaHora.toLocalTime()))
+                .isInstanceOf(PastSlotException.class);
+
+        verifyNoInteractions(catalogProfessionalPort, catalogUserPort, reservationProcessRepository, catedraHoldPort);
+    }
 
     private void datosDeCatalogoValidos() {
         when(catalogProfessionalPort.findById(PROFESIONAL))
