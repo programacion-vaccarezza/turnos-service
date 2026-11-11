@@ -3,6 +3,7 @@ package com.example.turnos_service.reservation.application.usecases;
 import com.example.turnos_service.reservation.application.exception.CatalogUnavailableException;
 import com.example.turnos_service.reservation.application.exception.CatedraRejectedException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalNotFoundException;
@@ -26,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +49,7 @@ class InitiateReservationUseCaseImplTest {
 
     private static final String LOGIN = "juan.lopez";
     private static final Long PROFESIONAL = 201L;
-    private static final LocalDate FECHA = LocalDate.of(2026, 10, 28);
+    private static final LocalDate FECHA = LocalDate.now().plusDays(7);
     private static final LocalTime HORA = LocalTime.of(17, 30);
     private static final Instant VENCE_HOLD = Instant.parse("2026-10-24T19:22:00Z");
     private static final Instant VENCE_CONFIRM = Instant.parse("2026-10-24T19:22:19Z");
@@ -67,7 +69,6 @@ class InitiateReservationUseCaseImplTest {
     @InjectMocks
     InitiateReservationUseCaseImpl useCase;
 
-    /** Estado del proceso en cada guardado, en orden: permite verificar el recorrido por la máquina de estados. */
     private final List<ReservationStatus> estadosGuardados = new ArrayList<>();
 
     @BeforeEach
@@ -81,8 +82,6 @@ class InitiateReservationUseCaseImplTest {
             return process;
         });
     }
-
-    // ---------- camino feliz ----------
 
     @Test
     void debeRecorrerLaMaquinaDeEstadosHastaEsperarElTelefono_cuandoTodoSaleBien() {
@@ -116,8 +115,6 @@ class InitiateReservationUseCaseImplTest {
         verify(catedraHoldPort).createHold(PROFESIONAL, FECHA, HORA, LOGIN);
         verify(catedraHoldPort).confirmHold("hold-1", LOGIN, "Juan", "Lopez");
     }
-
-    // ---------- validaciones previas: no se guarda nada ni se llama a la cátedra ----------
 
     @Test
     void debeRechazarSinTocarLaCatedra_cuandoElProfesionalNoExiste() {
@@ -159,8 +156,6 @@ class InitiateReservationUseCaseImplTest {
         verifyNoInteractions(reservationProcessRepository, catedraHoldPort);
     }
 
-    // ---------- creación del hold ----------
-
     @Test
     void debeFallarElProcesoConElCodigo_cuandoLaCatedraRechazaElHold() {
         datosDeCatalogoValidos();
@@ -186,8 +181,6 @@ class InitiateReservationUseCaseImplTest {
         assertThat(estadosGuardados).containsExactly(INITIATED, FAILED);
         verify(catedraHoldPort, never()).confirmHold(anyString(), anyString(), anyString(), anyString());
     }
-
-    // ---------- confirmación del hold ----------
 
     @Test
     void debeEsperarElTelefono_cuandoLaCatedraIndicaQueElProcesoYaEstabaConfirmado() {
@@ -243,7 +236,23 @@ class InitiateReservationUseCaseImplTest {
         assertThat(estadosGuardados).containsExactly(INITIATED, HOLD_CREATED, CONFIRMING);
     }
 
-    // ---------- helpers ----------
+    @Test
+    void debeRechazarSinConsultarANadie_cuandoLaFechaYaPaso() {
+        assertThatThrownBy(() -> useCase.initiateReservation(LOGIN, PROFESIONAL, LocalDate.now().minusDays(1), HORA))
+                .isInstanceOf(PastSlotException.class);
+
+        verifyNoInteractions(catalogProfessionalPort, catalogUserPort, reservationProcessRepository, catedraHoldPort);
+    }
+
+    @Test
+    void debeRechazarSinConsultarANadie_cuandoElHorarioDeHoyYaEmpezo() {
+        LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
+
+        assertThatThrownBy(() -> useCase.initiateReservation(LOGIN, PROFESIONAL, haceUnaHora.toLocalDate(), haceUnaHora.toLocalTime()))
+                .isInstanceOf(PastSlotException.class);
+
+        verifyNoInteractions(catalogProfessionalPort, catalogUserPort, reservationProcessRepository, catedraHoldPort);
+    }
 
     private void datosDeCatalogoValidos() {
         when(catalogProfessionalPort.findById(PROFESIONAL))

@@ -6,7 +6,6 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentP
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** La cátedra detectó una inconsistencia en el proceso (anexo §15.9): pasa a INVALID, que es final. */
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentProcessInvalidUseCaseImpl implements HandleAppointmentProcessInvalidUseCase {

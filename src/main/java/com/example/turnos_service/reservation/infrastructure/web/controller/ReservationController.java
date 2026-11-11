@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraUnava
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
 import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
@@ -15,6 +16,7 @@ import com.example.turnos_service.reservation.application.exception.ReservationN
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
 import com.example.turnos_service.reservation.application.service.ReservationService;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
+import com.example.turnos_service.reservation.infrastructure.web.dto.AvailableSlotResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.CancelReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
@@ -27,6 +29,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,8 +38,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +51,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationController {
 
+    private static final String INVALID_SLOT = "INVALID_SLOT";
     private static final String PROFESSIONAL_NOT_FOUND = "PROFESSIONAL_NOT_FOUND";
     private static final String PATIENT_NOT_FOUND = "PATIENT_NOT_FOUND";
     private static final String PROFESSIONAL_DISABLED = "PROFESSIONAL_DISABLED";
@@ -59,7 +65,6 @@ public class ReservationController {
     private static final String PHONE_NOT_REQUESTED = "PHONE_NOT_REQUESTED";
     private static final String PHONE_SUBMISSION_FAILED = "PHONE_SUBMISSION_FAILED";
 
-    /** Código HTTP para cada código de rechazo de la cátedra (anexo §13.1); el resto responde 409. */
     private static final Map<String, HttpStatus> STATUS_BY_CATEDRA_CODE = Map.of(
             "INVALID_SLOT", HttpStatus.BAD_REQUEST,
             "PROFESSIONAL_DISABLED", HttpStatus.BAD_REQUEST,
@@ -86,6 +91,8 @@ public class ReservationController {
             ReservationProcess process = reservationService.initiateReservation(
                     ownerLogin, request.getProfessionalId(), request.getDate(), request.getStartTime());
             return new ResponseEntity<>(reservationDtoMapper.toResponse(process), HttpStatus.CREATED);
+        } catch (PastSlotException e) {
+            return error(HttpStatus.BAD_REQUEST, INVALID_SLOT);
         } catch (ProfessionalNotFoundException e) {
             return error(HttpStatus.NOT_FOUND, PROFESSIONAL_NOT_FOUND);
         } catch (PatientNotFoundException e) {
@@ -153,6 +160,23 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
+    @Operation(summary = "Consultar el estado local de una reserva propia",
+            description = "La app lo consulta durante la reserva, porque el teléfono y el resultado llegan por Kafka al backend.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado local del proceso"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+            @ApiResponse(responseCode = "404", description = "code: RESERVATION_NOT_FOUND (no existe o no es del usuario)")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getReservation(@PathVariable Long id, Authentication authentication) {
+        try {
+            ReservationProcess process = reservationService.getReservation(authentication.getName(), id);
+            return ResponseEntity.ok(reservationDtoMapper.toResponse(process));
+        } catch (ReservationNotFoundException e) {
+            return error(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND);
+        }
+    }
+
     @Operation(summary = "Cancelar una reserva propia confirmada",
             description = "El body con el motivo es opcional. Cancelar una reserva ya CANCELLED devuelve su estado actual.")
     @ApiResponses({
@@ -180,6 +204,35 @@ public class ReservationController {
         } catch (ConcurrentReservationUpdateException e) {
             return error(HttpStatus.CONFLICT, CONCURRENT_UPDATE);
         } catch (CatedraUnavailableException e) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, CATEDRA_UNAVAILABLE);
+        }
+    }
+
+    @Operation(summary = "Consultar los turnos disponibles de un profesional en una fecha",
+            description = "Combina los horarios vigentes de catalogo-service con las ocupaciones de la cátedra. "
+                    + "No incluye turnos que ya empezaron. Lista vacía si no hay turnos disponibles.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turnos disponibles, ordenados por hora"),
+            @ApiResponse(responseCode = "400", description = "Parámetros inválidos o code: PROFESSIONAL_DISABLED"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+            @ApiResponse(responseCode = "404", description = "code: PROFESSIONAL_NOT_FOUND"),
+            @ApiResponse(responseCode = "503", description = "code: CATALOG_UNAVAILABLE, CATEDRA_UNAVAILABLE")
+    })
+    @GetMapping("/availability")
+    public ResponseEntity<?> getAvailability(@RequestParam Long professionalId,
+                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        try {
+            List<AvailableSlotResponse> slots = reservationService.getAvailability(professionalId, date).stream()
+                    .map(reservationDtoMapper::toResponse)
+                    .toList();
+            return ResponseEntity.ok(slots);
+        } catch (ProfessionalNotFoundException e) {
+            return error(HttpStatus.NOT_FOUND, PROFESSIONAL_NOT_FOUND);
+        } catch (ProfessionalDisabledException e) {
+            return error(HttpStatus.BAD_REQUEST, PROFESSIONAL_DISABLED);
+        } catch (CatalogUnavailableException e) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, CATALOG_UNAVAILABLE);
+        } catch (CatedraUnavailableException | CatedraRejectedException e) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, CATEDRA_UNAVAILABLE);
         }
     }

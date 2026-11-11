@@ -6,6 +6,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraUnava
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.InvalidPhoneNumberException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.PhoneNotRequestedException;
 import com.example.turnos_service.reservation.application.exception.PhoneSubmissionFailedException;
@@ -14,9 +15,11 @@ import com.example.turnos_service.reservation.application.exception.Professional
 import com.example.turnos_service.reservation.application.exception.ReservationNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ReservationRejectedException;
 import com.example.turnos_service.reservation.application.service.ReservationService;
+import com.example.turnos_service.reservation.domain.model.AvailableSlot;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.infrastructure.web.dto.AvailableSlotResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.CancelReservationRequest;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ErrorResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.InitiateReservationRequest;
@@ -44,6 +47,7 @@ import java.util.stream.Stream;
 
 import static com.example.turnos_service.reservation.domain.model.ReservationStatus.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +71,7 @@ class ReservationControllerTest {
     void setUp() {
         controller = new ReservationController(reservationService, new ReservationDtoMapper());
         request = new InitiateReservationRequest(201L, FECHA, HORA);
-        when(authentication.getName()).thenReturn(LOGIN);
+        lenient().when(authentication.getName()).thenReturn(LOGIN);
     }
 
     @Test
@@ -98,6 +102,7 @@ class ReservationControllerTest {
         return Stream.of(
                 Arguments.of(new ProfessionalNotFoundException(201L), HttpStatus.NOT_FOUND, "PROFESSIONAL_NOT_FOUND"),
                 Arguments.of(new PatientNotFoundException(LOGIN), HttpStatus.NOT_FOUND, "PATIENT_NOT_FOUND"),
+                Arguments.of(new PastSlotException(FECHA, HORA), HttpStatus.BAD_REQUEST, "INVALID_SLOT"),
                 Arguments.of(new ProfessionalDisabledException(201L), HttpStatus.BAD_REQUEST, "PROFESSIONAL_DISABLED"),
                 Arguments.of(rechazo(FAILED, "INVALID_SLOT"), HttpStatus.BAD_REQUEST, "INVALID_SLOT"),
                 Arguments.of(rechazo(FAILED, "PROFESSIONAL_DISABLED"), HttpStatus.BAD_REQUEST, "PROFESSIONAL_DISABLED"),
@@ -227,6 +232,76 @@ class ReservationControllerTest {
         when(reservationService.cancelReservation(LOGIN, 2L, null)).thenThrow(error);
 
         ResponseEntity<?> response = controller.cancelReservation(2L, null, authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(status);
+        assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);
+    }
+
+    @Test
+    void debeResponder200ConElEstadoDeLaReserva_cuandoLaReservaEsDelUsuario() {
+        when(reservationService.getReservation(LOGIN, 2L))
+                .thenReturn(ReservationProcess.builder().id(2L).status(CONFIRMED).build());
+
+        ResponseEntity<?> response = controller.getReservation(2L, authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(((ReservationResponse) response.getBody()).getStatus()).isEqualTo(CONFIRMED);
+        verify(reservationService).getReservation(LOGIN, 2L);
+    }
+
+    @Test
+    void debeResponder404_cuandoLaReservaNoExisteOEsDeOtroUsuario() {
+        when(reservationService.getReservation(LOGIN, 2L)).thenThrow(new ReservationNotFoundException(2L));
+
+        ResponseEntity<?> response = controller.getReservation(2L, authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo("RESERVATION_NOT_FOUND");
+    }
+
+    @Test
+    void debeResponder200ConLosTurnosLibres_cuandoConsultaLaDisponibilidad() {
+        LocalDate fecha = LocalDate.of(2026, 11, 20);
+        when(reservationService.getAvailability(201L, fecha)).thenReturn(List.of(
+                new AvailableSlot(fecha, LocalTime.of(9, 0), LocalTime.of(9, 30)),
+                new AvailableSlot(fecha, LocalTime.of(9, 30), LocalTime.of(10, 0))));
+
+        ResponseEntity<?> response = controller.getAvailability(201L, fecha);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((List<?>) response.getBody()).hasSize(2).allMatch(AvailableSlotResponse.class::isInstance);
+        assertThat(((AvailableSlotResponse) ((List<?>) response.getBody()).getFirst()).getStartTime())
+                .isEqualTo(LocalTime.of(9, 0));
+    }
+
+    @Test
+    void debeResponder200ConListaVacia_cuandoNoHayTurnosLibres() {
+        LocalDate fecha = LocalDate.of(2026, 11, 20);
+        when(reservationService.getAvailability(201L, fecha)).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.getAvailability(201L, fecha);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((List<?>) response.getBody()).isEmpty();
+    }
+
+    static Stream<Arguments> erroresDeLaDisponibilidad() {
+        return Stream.of(
+                Arguments.of(new ProfessionalNotFoundException(201L), HttpStatus.NOT_FOUND, "PROFESSIONAL_NOT_FOUND"),
+                Arguments.of(new ProfessionalDisabledException(201L), HttpStatus.BAD_REQUEST, "PROFESSIONAL_DISABLED"),
+                Arguments.of(new CatalogUnavailableException("catalogo caído", null), HttpStatus.SERVICE_UNAVAILABLE, "CATALOG_UNAVAILABLE"),
+                Arguments.of(new CatedraUnavailableException("cátedra caída", null), HttpStatus.SERVICE_UNAVAILABLE, "CATEDRA_UNAVAILABLE"),
+                Arguments.of(new CatedraRejectedException(400, "INVALID_DATE_RANGE"), HttpStatus.SERVICE_UNAVAILABLE, "CATEDRA_UNAVAILABLE")
+        );
+    }
+
+    @ParameterizedTest(name = "{2} -> {1}")
+    @MethodSource("erroresDeLaDisponibilidad")
+    void debeResponderElCodigoHttpYElCode_cuandoLaDisponibilidadFalla(RuntimeException error, HttpStatus status, String code) {
+        LocalDate fecha = LocalDate.of(2026, 11, 20);
+        when(reservationService.getAvailability(201L, fecha)).thenThrow(error);
+
+        ResponseEntity<?> response = controller.getAvailability(201L, fecha);
 
         assertThat(response.getStatusCode()).isEqualTo(status);
         assertThat(((ErrorResponse) response.getBody()).getCode()).isEqualTo(code);

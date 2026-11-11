@@ -17,6 +17,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -237,6 +238,26 @@ class CatedraAppointmentClientAdapterTest {
         assertThatThrownBy(() -> adapter.cancel(PROCESO, null))
                 .isInstanceOf(CatedraUnavailableException.class)
                 .hasCauseInstanceOf(CatedraApiException.class);
+    }
+
+    @Test
+    void debeLanzarNoDisponible_cuandoLaCatedraDevuelveUnaRespuestaInvalidaAlListar() {
+        when(responseSpec.bodyToMono(CatedraAppointmentResponse[].class))
+                .thenReturn(Mono.error(new DecodingException("respuesta inválida")));
+
+        assertThatThrownBy(() -> adapter.findByExternalPatientId(LOGIN))
+                .isInstanceOf(CatedraUnavailableException.class)
+                .hasCauseInstanceOf(DecodingException.class);
+    }
+
+    @Test
+    void debeLanzarNoDisponible_cuandoLaCatedraDevuelveUnaRespuestaInvalidaAlCancelar() {
+        when(responseSpec.bodyToMono(CancelAppointmentResponse.class))
+                .thenReturn(Mono.error(new DecodingException("respuesta inválida")));
+
+        assertThatThrownBy(() -> adapter.cancel(PROCESO, null))
+                .isInstanceOf(CatedraUnavailableException.class)
+                .hasCauseInstanceOf(DecodingException.class);
     }
 
     @Test

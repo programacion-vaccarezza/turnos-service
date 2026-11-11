@@ -2,11 +2,13 @@ package com.example.turnos_service.reservation.application.usecases;
 
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
+import com.example.turnos_service.reservation.application.service.ReservationReconciler;
 import com.example.turnos_service.reservation.domain.model.CatedraAppointment;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.domain.ports.out.CatedraAppointmentPort;
 import com.example.turnos_service.reservation.domain.ports.out.ReservationProcessRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,7 +16,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static com.example.turnos_service.reservation.domain.model.ReservationStatus.CONFIRMED;
 import static com.example.turnos_service.reservation.domain.model.ReservationStatus.CONFIRMING;
@@ -56,8 +58,13 @@ class ReconcileOpenReservationsUseCaseImplTest {
     @Captor
     ArgumentCaptor<Collection<ReservationStatus>> estadosCaptor;
 
-    @InjectMocks
     ReconcileOpenReservationsUseCaseImpl useCase;
+
+    @BeforeEach
+    void setUp() {
+        useCase = new ReconcileOpenReservationsUseCaseImpl(reservationProcessRepository, catedraAppointmentPort,
+                new ReservationReconciler(reservationProcessRepository));
+    }
 
     @Test
     void noDebeConsultarALaCatedra_cuandoNoHayProcesosAbiertos() {
@@ -247,7 +254,8 @@ class ReconcileOpenReservationsUseCaseImplTest {
         procesosAbiertos(conflicto, siguiente);
         when(catedraAppointmentPort.findByExternalPatientId(LOGIN))
                 .thenReturn(List.of(turno(PROCESO, "CONFIRMED"), turno("process-2", "CONFIRMED")));
-        when(reservationProcessRepository.save(conflicto)).thenThrow(new ConcurrentReservationUpdateException(1L, null));
+        when(reservationProcessRepository.save(conflicto)).thenThrow(new ConcurrentReservationUpdateException(57L, null));
+        when(reservationProcessRepository.findById(57L)).thenReturn(Optional.of(proceso(LOGIN, PROCESO, CONFIRMED, enDiezMinutos())));
 
         useCase.reconcileOpenReservations();
 
