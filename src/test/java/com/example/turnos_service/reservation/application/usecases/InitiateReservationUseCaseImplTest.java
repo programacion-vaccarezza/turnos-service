@@ -47,7 +47,7 @@ class InitiateReservationUseCaseImplTest {
 
     private static final String LOGIN = "juan.lopez";
     private static final Long PROFESIONAL = 201L;
-    private static final LocalDate FECHA = LocalDate.of(2026, 10, 28);
+    private static final LocalDate FECHA = LocalDate.now().plusDays(7);
     private static final LocalTime HORA = LocalTime.of(17, 30);
     private static final Instant VENCE_HOLD = Instant.parse("2026-10-24T19:22:00Z");
     private static final Instant VENCE_CONFIRM = Instant.parse("2026-10-24T19:22:19Z");
