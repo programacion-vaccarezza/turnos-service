@@ -5,6 +5,7 @@
 Tests unitarios con JUnit 5 + Mockito + AssertJ: cada test mockea los ports/dependencias de la clase bajo prueba. Cubren:
 
 - Máquina de estados: cada transición válida e inválida, los estados finales y la búsqueda de caminos entre estados.
+- Disponibilidad: horarios del profesional, ocupaciones de la cátedra y cálculo de los turnos libres, sin turnos pasados ni ocupados.
 - Inicio de una reserva: hold, confirm y cada rechazo o falta de respuesta de la cátedra.
 - Envío del teléfono: dueño, formato, vencimiento, estado y falla al publicar en Kafka.
 - Eventos de Kafka: cada handler, el despacho por tipo de evento, y los eventos duplicados, tardíos o fuera de orden.
