@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
+// Vence localmente los procesos cuyo hold ya pasó su vencimiento
 @Component
 @RequiredArgsConstructor
 public class ReservationExpirationService {
@@ -20,6 +21,7 @@ public class ReservationExpirationService {
 
     private final ReservationProcessRepository reservationProcessRepository;
 
+    // Pasa el proceso a EXPIRED si ya venció; si no, lo devuelve igual
     public ReservationProcess expireIfOverdue(ReservationProcess process) {
         if (!process.isLocallyExpired(Instant.now())) {
             return process;
@@ -32,6 +34,7 @@ public class ReservationExpirationService {
             LOG.info("proceso de reserva {}: {} -> EXPIRED (pasó expiresAt {})", process.getId(), previous, process.getExpiresAt());
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
+            // Si un evento de Kafka lo cambió al mismo tiempo, se devuelve el estado que dejó el evento
             return reservationProcessRepository.findById(process.getId()).orElseThrow(() -> e);
         }
     }

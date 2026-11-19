@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Reserva del usuario que se devuelve a la app
 @Getter
 @Setter
 @Builder

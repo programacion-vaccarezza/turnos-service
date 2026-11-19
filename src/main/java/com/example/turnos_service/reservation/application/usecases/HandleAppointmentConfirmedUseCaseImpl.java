@@ -6,12 +6,14 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentC
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// Registra la confirmación de la reserva informada por la cátedra
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentConfirmedUseCaseImpl implements HandleAppointmentConfirmedUseCase {
 
     private final ReservationEventStatusUpdater statusUpdater;
 
+    // Pasa el proceso a CONFIRMED y guarda el id de la reserva
     @Override
     public void handleAppointmentConfirmed(String reservationProcessId, Long reservationId) {
         statusUpdater.apply(reservationProcessId, ReservationStatus.CONFIRMED, "AppointmentConfirmed", process -> {

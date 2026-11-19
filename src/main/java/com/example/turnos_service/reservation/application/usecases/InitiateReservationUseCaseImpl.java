@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+// Inicia una reserva: crea el hold en la cátedra y lo confirma
 @Component
 @RequiredArgsConstructor
 public class InitiateReservationUseCaseImpl implements InitiateReservationUseCase {
@@ -43,6 +44,7 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
     private final ReservationProcessRepository reservationProcessRepository;
     private final CatedraHoldPort catedraHoldPort;
 
+    // Valida el turno, el profesional y el usuario, guarda el proceso y pide el hold y su confirmación
     @Override
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
         if (!LocalDateTime.of(date, startTime).isAfter(LocalDateTime.now())) {
@@ -72,6 +74,7 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         return confirmHold(process);
     }
 
+    // Pide el hold a la cátedra y guarda sus datos; si falla, el proceso pasa a FAILED
     private ReservationProcess createHold(ReservationProcess process) {
         validateTransition(process, ReservationStatus.HOLD_CREATED);
         Hold hold;
@@ -91,6 +94,7 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         return changeStatus(process, ReservationStatus.HOLD_CREATED, null);
     }
 
+    // Confirma el hold en la cátedra y deja el proceso esperando el teléfono
     private ReservationProcess confirmHold(ReservationProcess process) {
         validateTransition(process, ReservationStatus.CONFIRMING);
         process = changeStatus(process, ReservationStatus.CONFIRMING, null);
@@ -105,12 +109,15 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         } catch (CatedraRejectedException e) {
             return handleConfirmRejection(process, e);
         } catch (CatedraUnavailableException e) {
+            // Sin respuesta no se sabe si se confirmó: queda en CONFIRMING hasta que llegue un evento o se reconcilie
             LOG.warn("sin respuesta de la cátedra al confirmar el proceso {}, queda en CONFIRMING", process.getId());
             return process;
         }
     }
 
+    // Maneja el rechazo del confirm según el code de la cátedra
     private ReservationProcess handleConfirmRejection(ReservationProcess process, CatedraRejectedException e) {
+        // Si ya estaba confirmado se sigue igual que con una confirmación
         if (ALREADY_CONFIRMED.equals(e.getCode())) {
             return moveToWaitingForPhone(process);
         }
@@ -119,6 +126,7 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         throw new ReservationRejectedException(rejected.getId(), rejected.getStatus(), e.getCode());
     }
 
+    // Pasa el proceso a WAITING_FOR_PHONE; si un evento ya lo hizo, devuelve ese estado
     private ReservationProcess moveToWaitingForPhone(ReservationProcess process) {
         try {
             return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);
@@ -132,12 +140,14 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         }
     }
 
+    // Lanza un error si el proceso no puede pasar al estado pedido
     private void validateTransition(ReservationProcess process, ReservationStatus next) {
         if (!process.getStatus().canTransitionTo(next)) {
             throw new InvalidStateTransitionException(process.getStatus(), next);
         }
     }
 
+    // Valida la transición, cambia el estado y guarda el proceso
     private ReservationProcess changeStatus(ReservationProcess process, ReservationStatus next, String failureReason) {
         validateTransition(process, next);
         LOG.info("proceso de reserva {}: {} -> {}{}", process.getId(), process.getStatus(), next,

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
+// Configura Swagger con los datos del servicio y la autenticación con JWT
 @Configuration
 @OpenAPIDefinition(
         info = @Info(title = "turnos-service", version = "v1",

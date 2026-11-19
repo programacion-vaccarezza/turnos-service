@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+// Adapter que consulta usuarios en catalogo-service con el JWT de servicio
 @Component
 public class CatalogUserClientAdapter implements CatalogUserPort {
 
@@ -36,6 +37,7 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
         this.catalogUserMapper = catalogUserMapper;
     }
 
+    // Consulta el usuario; un error de comunicación se informa como catálogo no disponible
     @Override
     public Optional<PatientInfo> findByLogin(String login) {
         try {
@@ -45,6 +47,7 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
         }
     }
 
+    // Si catalogo rechaza el token, lo renueva y reintenta una vez
     private Optional<PatientInfo> findByLoginWithRetry(String login) {
         LOG.info("consultando a catalogo-service los datos del usuario {}", login);
         try {
@@ -56,6 +59,7 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
         }
     }
 
+    // Reintenta con el token renovado
     private Optional<PatientInfo> retryRequestUser(String login) {
         try {
             return requestUser(login);
@@ -65,6 +69,7 @@ public class CatalogUserClientAdapter implements CatalogUserPort {
         }
     }
 
+    // Hace el pedido; si el usuario no existe devuelve vacío
     private Optional<PatientInfo> requestUser(String login) {
         CatalogUserResponse response = catalogWebClient
                 .get()

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
+// Devuelve el estado local de una reserva del usuario
 @Component
 @RequiredArgsConstructor
 public class GetReservationUseCaseImpl implements GetReservationUseCase {
@@ -27,6 +28,7 @@ public class GetReservationUseCaseImpl implements GetReservationUseCase {
     private final CatedraAppointmentPort catedraAppointmentPort;
     private final ReservationReconciler reservationReconciler;
 
+    // Valida el dueño, vence el proceso si corresponde y lo reconcilia si su resultado es desconocido
     @Override
     public ReservationProcess getReservation(String ownerLogin, Long processId) {
         ReservationProcess process = reservationProcessRepository.findById(processId)
@@ -36,6 +38,7 @@ public class GetReservationUseCaseImpl implements GetReservationUseCase {
         return process.needsReconciliation(Instant.now()) ? reconcile(process) : process;
     }
 
+    // Busca la reserva en la cátedra y actualiza el proceso; si la cátedra no responde, lo deja igual
     private ReservationProcess reconcile(ReservationProcess process) {
         try {
             CatedraAppointment appointment = catedraAppointmentPort.findByExternalPatientId(process.getOwnerLogin()).stream()

@@ -6,17 +6,20 @@ import com.example.turnos_service.reservation.infrastructure.kafka.dto.Appointme
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// Maneja el vencimiento del proceso
 @Component
 @RequiredArgsConstructor
 public class AppointmentProcessExpiredHandler implements AppointmentEventHandler {
 
     private final ReservationService reservationService;
 
+    // Devuelve el tipo de evento que maneja
     @Override
     public String eventType() {
         return "AppointmentProcessExpired";
     }
 
+    // Pasa a la fachada el proceso y el motivo
     @Override
     public void handle(AppointmentKafkaEvent event) {
         reservationService.handleAppointmentProcessExpired(event.reservationProcessId(), event.reason());
