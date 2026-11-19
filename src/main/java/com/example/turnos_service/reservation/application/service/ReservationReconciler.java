@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+// Lleva un proceso local al estado que informa la cátedra
 @Component
 @RequiredArgsConstructor
 public class ReservationReconciler {
@@ -25,6 +26,7 @@ public class ReservationReconciler {
     private static final String PROCESS_EXPIRED = "PROCESS_EXPIRED";
     private static final String CATEDRA_FAILED = "CATEDRA_FAILED";
 
+    // Estado local que corresponde a cada estado de la cátedra
     private static final Map<String, ReservationStatus> LOCAL_STATUS_BY_CATEDRA_STATUS = Map.of(
             "PHONE_PENDING", ReservationStatus.WAITING_FOR_PHONE,
             "CONFIRMED", ReservationStatus.CONFIRMED,
@@ -36,6 +38,7 @@ public class ReservationReconciler {
 
     private final ReservationProcessRepository reservationProcessRepository;
 
+    // Compara el proceso con la reserva de la cátedra y actualiza el estado local si hace falta
     public ReservationProcess reconcile(ReservationProcess process, CatedraAppointment appointment) {
         if (appointment == null) {
             return reconcileNotListed(process);
@@ -46,6 +49,7 @@ public class ReservationReconciler {
                     appointment.getStatus(), process.getId());
             return process;
         }
+        // Mientras la cátedra espera el teléfono, cualquier estado de esa etapa ya es correcto
         if (process.getStatus() == target || (target == ReservationStatus.WAITING_FOR_PHONE && PHONE_STAGE.contains(process.getStatus()))) {
             return process;
         }
@@ -55,6 +59,7 @@ public class ReservationReconciler {
         return moveTo(process, target, target == ReservationStatus.EXPIRED ? CATEDRA_FAILED : null);
     }
 
+    // Si la cátedra no tiene la reserva y el proceso ya venció, lo pasa a EXPIRED
     private ReservationProcess reconcileNotListed(ReservationProcess process) {
         if (process.getExpiresAt() != null && Instant.now().isAfter(process.getExpiresAt())) {
             return moveTo(process, ReservationStatus.EXPIRED, PROCESS_EXPIRED);
@@ -62,6 +67,7 @@ public class ReservationReconciler {
         return process;
     }
 
+    // Cambia el estado solo si existe un camino válido de transiciones
     private ReservationProcess moveTo(ReservationProcess process, ReservationStatus target, String failureReason) {
         ReservationStatus current = process.getStatus();
         List<ReservationStatus> path = current.pathTo(target);

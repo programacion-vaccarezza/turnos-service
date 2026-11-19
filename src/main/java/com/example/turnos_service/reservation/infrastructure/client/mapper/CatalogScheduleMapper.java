@@ -4,9 +4,11 @@ import com.example.turnos_service.reservation.domain.model.WeeklySchedule;
 import com.example.turnos_service.reservation.infrastructure.client.dto.CatalogScheduleResponse;
 import org.springframework.stereotype.Component;
 
+// Convierte los horarios de catalogo-service al modelo de dominio
 @Component
 public class CatalogScheduleMapper {
 
+    // Convierte la respuesta en WeeklySchedule
     public WeeklySchedule toDomain(CatalogScheduleResponse response) {
         if (response == null) {
             return null;

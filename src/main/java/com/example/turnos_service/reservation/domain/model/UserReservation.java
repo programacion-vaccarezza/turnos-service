@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Reserva del usuario: el proceso local combinado con los datos de la cátedra
 @Getter
 @Setter
 @Builder

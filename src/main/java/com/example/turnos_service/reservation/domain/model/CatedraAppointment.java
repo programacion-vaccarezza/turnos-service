@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Reserva tal como la informa la cátedra
 @Getter
 @Setter
 @Builder

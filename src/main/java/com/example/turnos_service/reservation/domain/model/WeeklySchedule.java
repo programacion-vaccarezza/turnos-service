@@ -12,6 +12,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// Horario semanal de atención de un profesional
 @Getter
 @Setter
 @Builder
@@ -24,6 +25,7 @@ public class WeeklySchedule {
     private LocalTime endTime;
     private int slotDurationMinutes;
 
+    // Divide el horario en turnos para la fecha, si coincide el día de la semana
     public List<AvailableSlot> slotsOn(LocalDate date) {
         List<AvailableSlot> slots = new ArrayList<>();
         if (date.getDayOfWeek() != dayOfWeek || slotDurationMinutes <= 0) {

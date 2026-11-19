@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+// Bloqueo temporal de un turno creado en la cátedra
 @Getter
 @Setter
 @Builder

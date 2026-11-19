@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+// Envía a la cátedra el teléfono que pidió para una reserva
 @Component
 @RequiredArgsConstructor
 public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
@@ -31,6 +32,7 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
     private final PhoneSubmissionPublisher phoneSubmissionPublisher;
     private final ReservationExpirationService reservationExpirationService;
 
+    // Valida el dueño, el formato, el vencimiento y el estado, y publica el teléfono en Kafka
     @Override
     public ReservationProcess submitPhone(String ownerLogin, Long processId, String phoneNumber) {
         ReservationProcess process = reservationProcessRepository.findById(processId)
@@ -41,6 +43,7 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
         if (!PHONE_PATTERN.matcher(normalizedPhone).matches()) {
             throw new InvalidPhoneNumberException();
         }
+        // Si el hold ya venció, el proceso se cierra sin enviar nada
         process = reservationExpirationService.expireIfOverdue(process);
         if (process.getStatus() == ReservationStatus.EXPIRED) {
             throw new ReservationRejectedException(process.getId(), ReservationStatus.EXPIRED,
@@ -65,10 +68,12 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
             LOG.info("proceso de reserva {}: {} -> PHONE_SUBMITTED", processId, previous);
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
+            // El resultado de la cátedra llegó por Kafka antes de guardar: se devuelve ese estado
             return reservationProcessRepository.findById(processId).orElseThrow(() -> e);
         }
     }
 
+    // Quita espacios, guiones, paréntesis y puntos del teléfono
     private String normalize(String phoneNumber) {
         return phoneNumber == null ? "" : phoneNumber.replaceAll("[\\s\\-().]", "");
     }

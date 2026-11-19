@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+// Recupera los procesos que quedaron abiertos consultando a la cátedra
 @Component
 @RequiredArgsConstructor
 public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReservationsUseCase {
@@ -29,6 +30,7 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
     private static final int MAX_ATTEMPTS = 3;
     private static final long RETRY_DELAY_MILLIS = 5000;
 
+    // Estados que todavía pueden cambiar
     private static final Set<ReservationStatus> RECONCILABLE = EnumSet.of(
             ReservationStatus.HOLD_CREATED, ReservationStatus.CONFIRMING, ReservationStatus.WAITING_FOR_PHONE,
             ReservationStatus.PHONE_SUBMITTED, ReservationStatus.PHONE_REJECTED, ReservationStatus.CONFIRMED);
@@ -37,6 +39,7 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
     private final CatedraAppointmentPort catedraAppointmentPort;
     private final ReservationReconciler reservationReconciler;
 
+    // Busca los procesos abiertos y los reconcilia con las reservas de la cátedra
     @Override
     public void reconcileOpenReservations() {
         List<ReservationProcess> openProcesses = reservationProcessRepository.findByStatusIn(RECONCILABLE);
@@ -56,6 +59,7 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
         LOG.info("reconciliación terminada");
     }
 
+    // Pide a la cátedra las reservas de los dueños de los procesos, con hasta 3 intentos
     private Optional<Map<String, CatedraAppointment>> fetchWithRetries(List<ReservationProcess> openProcesses) {
         Set<String> owners = openProcesses.stream().map(ReservationProcess::getOwnerLogin).collect(Collectors.toSet());
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -75,6 +79,7 @@ public class ReconcileOpenReservationsUseCaseImpl implements ReconcileOpenReserv
         return Optional.empty();
     }
 
+    // Espera antes de reintentar; devuelve false si el hilo se interrumpe
     private boolean waitBeforeRetry() {
         try {
             Thread.sleep(RETRY_DELAY_MILLIS);

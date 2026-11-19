@@ -7,6 +7,7 @@ import com.example.turnos_service.reservation.infrastructure.persistence.reposit
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// Adapter que guarda los eventos procesados con JPA
 @Component
 @RequiredArgsConstructor
 public class JpaProcessedEventRepositoryAdapter implements ProcessedEventRepository {
@@ -14,11 +15,13 @@ public class JpaProcessedEventRepositoryAdapter implements ProcessedEventReposit
     private final JpaProcessedEventRepository jpaProcessedEventRepository;
     private final ProcessedEventMapper processedEventMapper;
 
+    // Indica si el evento ya está guardado
     @Override
     public boolean existsByEventId(String eventId) {
         return jpaProcessedEventRepository.existsById(eventId);
     }
 
+    // Guarda el evento
     @Override
     public ProcessedEvent save(ProcessedEvent processedEvent) {
         return processedEventMapper.toDomainModel(

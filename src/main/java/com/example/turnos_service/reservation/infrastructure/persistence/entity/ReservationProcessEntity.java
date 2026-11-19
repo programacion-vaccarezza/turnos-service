@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Entidad JPA de la tabla reservation_process
 @Getter
 @Setter
 @Entity
@@ -81,6 +82,7 @@ public class ReservationProcessEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    // Versión para detectar actualizaciones concurrentes
     @Version
     @Column(nullable = false)
     private Long version;

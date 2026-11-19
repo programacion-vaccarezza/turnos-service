@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// Calcula los turnos libres de un profesional en una fecha
 @Component
 @RequiredArgsConstructor
 public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
@@ -30,6 +31,7 @@ public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
     private final CatalogSchedulePort catalogSchedulePort;
     private final CatedraOccupancyPort catedraOccupancyPort;
 
+    // Arma los turnos con los horarios del profesional y quita los que ya pasaron y los ocupados
     @Override
     public List<AvailableSlot> getAvailability(Long professionalId, LocalDate date) {
         ProfessionalInfo professional = catalogProfessionalPort.findById(professionalId)
@@ -43,6 +45,7 @@ public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
                 .flatMap(schedule -> schedule.slotsOn(date).stream())
                 .filter(slot -> slot.startsAfter(now))
                 .toList();
+        // Si no hay turnos posibles no hace falta consultar a la cátedra
         if (slots.isEmpty()) {
             return List.of();
         }
@@ -50,6 +53,7 @@ public class GetAvailabilityUseCaseImpl implements GetAvailabilityUseCase {
         Set<LocalTime> occupied = catedraOccupancyPort.findByProfessionalAndDate(professionalId, date).stream()
                 .map(Occupancy::getStartTime)
                 .collect(Collectors.toSet());
+        // Ordena por hora y descarta turnos repetidos
         TreeMap<LocalTime, AvailableSlot> available = slots.stream()
                 .filter(slot -> !occupied.contains(slot.getStartTime()))
                 .collect(Collectors.toMap(AvailableSlot::getStartTime, Function.identity(), (first, second) -> first, TreeMap::new));

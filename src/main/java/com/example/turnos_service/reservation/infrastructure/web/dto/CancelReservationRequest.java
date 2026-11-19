@@ -3,6 +3,7 @@ package com.example.turnos_service.reservation.infrastructure.web.dto;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+// Body opcional para cancelar una reserva, con el motivo
 @Getter
 @Setter
 @Builder

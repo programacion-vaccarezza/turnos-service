@@ -1,0 +1,38 @@
+services:
+  turnos-db:
+    image: postgres:16
+    container_name: turnos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${TURNOS_DB_NAME}
+      POSTGRES_USER: ${TURNOS_DB_USER}
+      POSTGRES_PASSWORD: ${TURNOS_DB_PASSWORD}
+    ports:
+      - "${TURNOS_DB_PORT}:5432"
+    volumes:
+      - turnos-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TURNOS_DB_USER} -d ${TURNOS_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  turnos-service:
+    build: .
+    container_name: turnos-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://turnos-db:5432/${TURNOS_DB_NAME}
+      DB_USERNAME: ${TURNOS_DB_USER}
+      DB_PASSWORD: ${TURNOS_DB_PASSWORD}
+      CATALOGO_SERVICE_URL: http://catalogo-service:8080
+      TZ: America/Argentina/Mendoza
+    ports:
+      - "8081:8081"
+    depends_on:
+      turnos-db:
+        condition: service_healthy
+
+volumes:
+  turnos-db-data:

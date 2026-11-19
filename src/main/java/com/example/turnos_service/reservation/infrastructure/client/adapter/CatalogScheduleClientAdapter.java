@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.util.Arrays;
 import java.util.List;
 
+// Adapter que consulta los horarios de un profesional en catalogo-service
 @Component
 public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
 
@@ -37,6 +38,7 @@ public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
         this.catalogScheduleMapper = catalogScheduleMapper;
     }
 
+    // Consulta los horarios y se queda con los habilitados
     @Override
     public List<WeeklySchedule> findEnabledByProfessionalId(Long professionalId) {
         try {
@@ -52,6 +54,7 @@ public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
         }
     }
 
+    // Si catalogo rechaza el token, lo renueva y reintenta una vez
     private CatalogScheduleResponse[] requestWithRetry(Long professionalId) {
         LOG.info("consultando a catalogo-service los horarios del profesional {}", professionalId);
         try {
@@ -63,6 +66,7 @@ public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
         }
     }
 
+    // Reintenta con el token renovado
     private CatalogScheduleResponse[] retryRequestSchedules(Long professionalId) {
         try {
             return requestSchedules(professionalId);
@@ -72,6 +76,7 @@ public class CatalogScheduleClientAdapter implements CatalogSchedulePort {
         }
     }
 
+    // Hace el pedido de horarios
     private CatalogScheduleResponse[] requestSchedules(Long professionalId) {
         return catalogWebClient
                 .get()

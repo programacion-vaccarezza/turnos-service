@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// Consumer del topic de acciones de la cátedra que reparte cada evento a su handler
 @Component
 public class AppointmentActionsConsumer {
 
@@ -23,6 +24,7 @@ public class AppointmentActionsConsumer {
     private final Map<String, AppointmentEventHandler> handlers;
     private final EventIdempotencyService eventIdempotencyService;
 
+    // Arma el mapa de handlers por tipo de evento
     public AppointmentActionsConsumer(List<AppointmentEventHandler> handlers,
                                       EventIdempotencyService eventIdempotencyService) {
         this.handlers = handlers.stream()
@@ -30,6 +32,7 @@ public class AppointmentActionsConsumer {
         this.eventIdempotencyService = eventIdempotencyService;
     }
 
+    // Ignora eventos incompletos o sin handler y procesa cada evento una sola vez
     @KafkaListener(topics = "${catedra.kafka.appointment-actions-topic}")
     public void receive(@Payload AppointmentKafkaEvent event,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,

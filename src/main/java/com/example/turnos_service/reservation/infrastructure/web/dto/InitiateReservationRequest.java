@@ -8,6 +8,7 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Body para iniciar una reserva
 @Getter
 @Setter
 @Builder
