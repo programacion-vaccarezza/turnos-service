@@ -1,8 +1,10 @@
 package com.example.turnos_service.reservation.infrastructure.web.mapper;
 
+import com.example.turnos_service.reservation.domain.model.AvailableSlot;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.ReservationStatus;
 import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.infrastructure.web.dto.AvailableSlotResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ReservationResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.UserReservationResponse;
 import org.junit.jupiter.api.Test;
@@ -83,5 +85,20 @@ class ReservationDtoMapperTest {
     @Test
     void debeDevolverNull_cuandoLaReservaDelUsuarioEsNula() {
         assertThat(mapper.toResponse((UserReservation) null)).isNull();
+    }
+
+    @Test
+    void debeConvertirLaFechaYLosHorarios_cuandoArmaLaRespuestaDeUnTurnoLibre() {
+        AvailableSlotResponse response = mapper.toResponse(
+                new AvailableSlot(LocalDate.of(2026, 11, 20), LocalTime.of(9, 0), LocalTime.of(9, 30)));
+
+        assertThat(response)
+                .extracting("date", "startTime", "endTime")
+                .containsExactly(LocalDate.of(2026, 11, 20), LocalTime.of(9, 0), LocalTime.of(9, 30));
+    }
+
+    @Test
+    void debeDevolverNull_cuandoElTurnoLibreEsNulo() {
+        assertThat(mapper.toResponse((AvailableSlot) null)).isNull();
     }
 }

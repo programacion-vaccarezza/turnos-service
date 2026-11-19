@@ -2,10 +2,6 @@ package com.example.turnos_service.reservation.application.exception;
 
 import lombok.Getter;
 
-/**
- * La cátedra rechazó la operación con un error funcional (4xx).
- * {@code code} es el código estable del anexo §13 (ej. SLOT_ALREADY_HELD, HOLD_EXPIRED); puede ser null.
- */
 @Getter
 public class CatedraRejectedException extends RuntimeException {
 

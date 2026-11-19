@@ -18,12 +18,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Devuelve las reservas del usuario autenticado. La cátedra lista las de toda la cuenta técnica (anexo §11),
- * así que cada reserva se cruza con los procesos locales del usuario y solo se incluyen las suyas.
- * Si la cátedra no está disponible, se responde con los procesos locales y su estado local.
- * Antes de responder se vencen los procesos locales que ya pasaron su expiresAt.
- */
 @Component
 @RequiredArgsConstructor
 public class GetMyReservationsUseCaseImpl implements GetMyReservationsUseCase {

@@ -8,10 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/**
- * La cátedra rechazó el teléfono (anexo §15.7). El proceso sigue disponible hasta expiresAt:
- * pasa a PHONE_REJECTED con el motivo y el usuario puede reenviar otro teléfono.
- */
 @Component
 @RequiredArgsConstructor
 public class HandleAdditionalInformationRejectedUseCaseImpl implements HandleAdditionalInformationRejectedUseCase {

@@ -20,16 +20,11 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * El usuario envía su teléfono (anexo §15.5). Todas las validaciones se hacen ANTES de publicar en Kafka:
- * dueño, formato, que la cátedra lo haya pedido, vencimiento y transición de estado.
- */
 @Component
 @RequiredArgsConstructor
 public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SubmitPhoneUseCaseImpl.class);
-    /** Formato que exige la cátedra después de quitar espacios, guiones, paréntesis y puntos (anexo §15.5). */
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[0-9]{7,15}$");
 
     private final ReservationProcessRepository reservationProcessRepository;
@@ -46,7 +41,6 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
         if (!PHONE_PATTERN.matcher(normalizedPhone).matches()) {
             throw new InvalidPhoneNumberException();
         }
-        // La copia local no extiende el hold (enunciado §7): si ya venció se cierra sin enviar nada.
         process = reservationExpirationService.expireIfOverdue(process);
         if (process.getStatus() == ReservationStatus.EXPIRED) {
             throw new ReservationRejectedException(process.getId(), ReservationStatus.EXPIRED,
@@ -71,7 +65,6 @@ public class SubmitPhoneUseCaseImpl implements SubmitPhoneUseCase {
             LOG.info("proceso de reserva {}: {} -> PHONE_SUBMITTED", processId, previous);
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
-            // El resultado de la cátedra llegó por Kafka antes de guardar: se devuelve el estado ya actualizado.
             return reservationProcessRepository.findById(processId).orElseThrow(() -> e);
         }
     }

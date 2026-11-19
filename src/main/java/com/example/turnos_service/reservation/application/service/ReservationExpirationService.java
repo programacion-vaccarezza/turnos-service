@@ -11,10 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/**
- * Vence localmente un proceso cuyo hold ya pasó su expiresAt: la copia local no extiende el hold (enunciado §7).
- * Se aplica al consultar el proceso; ver {@link ReservationProcess#isLocallyExpired(Instant)}.
- */
 @Component
 @RequiredArgsConstructor
 public class ReservationExpirationService {
@@ -36,7 +32,6 @@ public class ReservationExpirationService {
             LOG.info("proceso de reserva {}: {} -> EXPIRED (pasó expiresAt {})", process.getId(), previous, process.getExpiresAt());
             return saved;
         } catch (ConcurrentReservationUpdateException e) {
-            // Un evento de Kafka actualizó el proceso al mismo tiempo: se devuelve el estado que dejó el evento.
             return reservationProcessRepository.findById(process.getId()).orElseThrow(() -> e);
         }
     }

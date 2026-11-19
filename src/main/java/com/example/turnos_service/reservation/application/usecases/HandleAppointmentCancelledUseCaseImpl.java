@@ -6,10 +6,6 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentC
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * La cátedra canceló la reserva (anexo §15.10): pasa a CANCELLED, que es final.
- * Si el cancel REST ya la había dejado en CANCELLED, el evento se ignora.
- */
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentCancelledUseCaseImpl implements HandleAppointmentCancelledUseCase {

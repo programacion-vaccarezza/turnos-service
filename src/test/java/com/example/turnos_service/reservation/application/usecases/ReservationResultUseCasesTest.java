@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-/** Cada caso de uso de resultado pide al updater su estado destino y aplica solo los datos de su evento. */
 @ExtendWith(MockitoExtension.class)
 class ReservationResultUseCasesTest {
 

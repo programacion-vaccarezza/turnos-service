@@ -48,10 +48,6 @@ public enum ReservationStatus {
         return next != null && TRANSITIONS.get(this).contains(next);
     }
 
-    /**
-     * Camino más corto de transiciones válidas hasta {@code target}, sin incluir el estado actual.
-     * Vacío si ya está en {@code target} o si no se puede llegar (por ejemplo, desde un estado final).
-     */
     public List<ReservationStatus> pathTo(ReservationStatus target) {
         Map<ReservationStatus, ReservationStatus> previous = new EnumMap<>(ReservationStatus.class);
         Deque<ReservationStatus> pending = new ArrayDeque<>(List.of(this));

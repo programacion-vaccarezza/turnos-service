@@ -4,6 +4,7 @@ import com.example.turnos_service.reservation.application.exception.CatedraRejec
 import com.example.turnos_service.reservation.application.exception.ConcurrentReservationUpdateException;
 import com.example.turnos_service.reservation.application.exception.CatedraUnavailableException;
 import com.example.turnos_service.reservation.application.exception.InvalidStateTransitionException;
+import com.example.turnos_service.reservation.application.exception.PastSlotException;
 import com.example.turnos_service.reservation.application.exception.PatientNotFoundException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalDisabledException;
 import com.example.turnos_service.reservation.application.exception.ProfessionalNotFoundException;
@@ -25,13 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-/**
- * Inicia una reserva: valida el profesional y el usuario en catalogo-service, guarda el proceso local,
- * crea el hold en la cátedra y lo confirma, avanzando la máquina de estados según cada resultado.
- * Cada transición se valida antes de llamar a la cátedra.
- */
 @Component
 @RequiredArgsConstructor
 public class InitiateReservationUseCaseImpl implements InitiateReservationUseCase {
@@ -48,6 +45,9 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
 
     @Override
     public ReservationProcess initiateReservation(String ownerLogin, Long professionalId, LocalDate date, LocalTime startTime) {
+        if (!LocalDateTime.of(date, startTime).isAfter(LocalDateTime.now())) {
+            throw new PastSlotException(date, startTime);
+        }
         ProfessionalInfo professional = catalogProfessionalPort.findById(professionalId)
                 .orElseThrow(() -> new ProfessionalNotFoundException(professionalId));
         if (!professional.isEnabled()) {
@@ -82,7 +82,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
             ReservationProcess failed = changeStatus(process, ReservationStatus.FAILED, e.getCode());
             throw new ReservationRejectedException(failed.getId(), failed.getStatus(), e.getCode());
         } catch (CatedraUnavailableException e) {
-            // Si el hold llegó a crearse, la cátedra lo vence sola: el proceso local no puede continuar.
             changeStatus(process, ReservationStatus.FAILED, CATEDRA_UNAVAILABLE);
             throw e;
         }
@@ -106,7 +105,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         } catch (CatedraRejectedException e) {
             return handleConfirmRejection(process, e);
         } catch (CatedraUnavailableException e) {
-            // Un timeout no prueba que la confirmación falló (anexo §18.4): queda en CONFIRMING y converge después.
             LOG.warn("sin respuesta de la cátedra al confirmar el proceso {}, queda en CONFIRMING", process.getId());
             return process;
         }
@@ -121,10 +119,6 @@ public class InitiateReservationUseCaseImpl implements InitiateReservationUseCas
         throw new ReservationRejectedException(rejected.getId(), rejected.getStatus(), e.getCode());
     }
 
-    /**
-     * AdditionalInformationRequested puede llegar por Kafka antes que la respuesta del confirm (enunciado §7)
-     * y ya haber pasado el proceso a WAITING_FOR_PHONE: en ese caso se devuelve el estado guardado.
-     */
     private ReservationProcess moveToWaitingForPhone(ReservationProcess process) {
         try {
             return changeStatus(process, ReservationStatus.WAITING_FOR_PHONE, null);

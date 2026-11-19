@@ -1,7 +1,9 @@
 package com.example.turnos_service.reservation.infrastructure.web.mapper;
 
+import com.example.turnos_service.reservation.domain.model.AvailableSlot;
 import com.example.turnos_service.reservation.domain.model.ReservationProcess;
 import com.example.turnos_service.reservation.domain.model.UserReservation;
+import com.example.turnos_service.reservation.infrastructure.web.dto.AvailableSlotResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.ReservationResponse;
 import com.example.turnos_service.reservation.infrastructure.web.dto.UserReservationResponse;
 import org.springframework.stereotype.Component;
@@ -42,6 +44,17 @@ public class ReservationDtoMapper {
                 .failureReason(reservation.getFailureReason())
                 .cancellationReason(reservation.getCancellationReason())
                 .source(reservation.getSource())
+                .build();
+    }
+
+    public AvailableSlotResponse toResponse(AvailableSlot slot) {
+        if (slot == null) {
+            return null;
+        }
+        return AvailableSlotResponse.builder()
+                .date(slot.getDate())
+                .startTime(slot.getStartTime())
+                .endTime(slot.getEndTime())
                 .build();
     }
 }

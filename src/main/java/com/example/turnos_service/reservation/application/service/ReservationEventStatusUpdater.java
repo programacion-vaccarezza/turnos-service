@@ -11,11 +11,6 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/**
- * Aplica a un proceso de reserva el cambio de estado que informa un evento de la cátedra.
- * Si el proceso no existe, ya está en ese estado o la transición no es válida (evento tardío,
- * duplicado o fuera de orden), el evento se ignora sin excepción y el proceso nunca retrocede (enunciado §7).
- */
 @Component
 @RequiredArgsConstructor
 public class ReservationEventStatusUpdater {

@@ -12,12 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Optional;
 
-/**
- * La cátedra pide el teléfono (anexo §15.4). Se guarda el eventId como requestEventId, necesario para
- * responder, y el vencimiento. El evento puede llegar antes o después del 202 del confirm (enunciado §7):
- * desde CONFIRMING avanza a WAITING_FOR_PHONE; si ya estaba ahí solo se guardan los datos.
- * En cualquier otro estado se ignora sin excepción.
- */
 @Component
 @RequiredArgsConstructor
 public class HandleAdditionalInformationRequestedUseCaseImpl implements HandleAdditionalInformationRequestedUseCase {

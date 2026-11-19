@@ -2,11 +2,6 @@ package com.example.turnos_service.shared.infrastructure.client.catedra.exceptio
 
 import lombok.Getter;
 
-/**
- * Error funcional devuelto por la API de la cátedra.
- * Las decisiones se toman por {@code status} y {@code code}, nunca por el texto del detalle (anexo §13).
- * {@code code} puede ser null: los 401/403 de Spring Security de la cátedra pueden no incluirlo.
- */
 @Getter
 public class CatedraApiException extends RuntimeException {
 

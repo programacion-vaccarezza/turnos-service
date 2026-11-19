@@ -8,9 +8,6 @@ import lombok.Setter;
 
 import java.time.Instant;
 
-/**
- * Evento de Kafka ya procesado. Su {@code eventId} es la clave de idempotencia (anexo §15.1).
- */
 @Getter
 @Setter
 @Builder

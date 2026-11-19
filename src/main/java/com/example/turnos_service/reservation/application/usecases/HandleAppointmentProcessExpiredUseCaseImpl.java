@@ -6,7 +6,6 @@ import com.example.turnos_service.reservation.domain.ports.in.HandleAppointmentP
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** El proceso venció antes de completarse (anexo §15.8): pasa a EXPIRED, que es final. */
 @Component
 @RequiredArgsConstructor
 public class HandleAppointmentProcessExpiredUseCaseImpl implements HandleAppointmentProcessExpiredUseCase {

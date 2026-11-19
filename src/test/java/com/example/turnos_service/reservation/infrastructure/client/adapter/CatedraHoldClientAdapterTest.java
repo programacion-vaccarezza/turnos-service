@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.core.codec.DecodingException;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -72,8 +73,6 @@ class CatedraHoldClientAdapterTest {
         doReturn(responseSpec).when(headersSpec).retrieve();
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
     }
-
-    // ---------- crear hold ----------
 
     @Test
     void debeDevolverElHold_cuandoLaCatedraLoCrea() {
@@ -135,8 +134,6 @@ class CatedraHoldClientAdapterTest {
                 .isInstanceOf(CatedraUnavailableException.class);
     }
 
-    // ---------- confirmar hold ----------
-
     @Test
     void debeDevolverLaConfirmacion_cuandoLaCatedraAceptaElConfirm() {
         when(responseSpec.bodyToMono(ConfirmHoldResponse.class))
@@ -185,6 +182,26 @@ class CatedraHoldClientAdapterTest {
 
         assertThatThrownBy(() -> adapter.confirmHold("hold-1", "juan.lopez", "Juan", "Lopez"))
                 .isInstanceOf(CatedraUnavailableException.class);
+    }
+
+    @Test
+    void debeLanzarNoDisponible_cuandoLaCatedraDevuelveUnaRespuestaInvalidaAlCrearElHold() {
+        when(responseSpec.bodyToMono(CreateHoldResponse.class))
+                .thenReturn(Mono.error(new DecodingException("respuesta inválida")));
+
+        assertThatThrownBy(() -> adapter.createHold(201L, FECHA, HORA, "juan.lopez"))
+                .isInstanceOf(CatedraUnavailableException.class)
+                .hasCauseInstanceOf(DecodingException.class);
+    }
+
+    @Test
+    void debeLanzarNoDisponible_cuandoLaCatedraDevuelveUnaRespuestaInvalidaAlConfirmar() {
+        when(responseSpec.bodyToMono(ConfirmHoldResponse.class))
+                .thenReturn(Mono.error(new DecodingException("respuesta inválida")));
+
+        assertThatThrownBy(() -> adapter.confirmHold("hold-1", "juan.lopez", "Juan", "Lopez"))
+                .isInstanceOf(CatedraUnavailableException.class)
+                .hasCauseInstanceOf(DecodingException.class);
     }
 
     private WebClientRequestException sinRespuesta() {
